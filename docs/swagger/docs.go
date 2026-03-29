@@ -63,25 +63,25 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "State inválido",
+                        "description": "invalid or expired state parameter",
                         "schema": {
                             "$ref": "#/definitions/http.ErrorResponse"
                         }
                     },
                     "409": {
-                        "description": "Email já cadastrado com senha local",
+                        "description": "email already registered with password login",
                         "schema": {
                             "$ref": "#/definitions/http.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Erro interno",
+                        "description": "internal server error",
                         "schema": {
                             "$ref": "#/definitions/http.ErrorResponse"
                         }
                     },
                     "502": {
-                        "description": "Erro no GitHub",
+                        "description": "failed to authenticate with GitHub",
                         "schema": {
                             "$ref": "#/definitions/http.ErrorResponse"
                         }
@@ -120,13 +120,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Credenciais inválidas",
+                        "description": "invalid email or password",
                         "schema": {
                             "$ref": "#/definitions/http.ErrorResponse"
                         }
                     },
                     "422": {
-                        "description": "Dados inválidos",
+                        "description": "invalid request body",
                         "schema": {
                             "$ref": "#/definitions/http.ErrorResponse"
                         }
@@ -166,19 +166,19 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "Email já cadastrado",
+                        "description": "email already registered",
                         "schema": {
                             "$ref": "#/definitions/http.ErrorResponse"
                         }
                     },
                     "422": {
-                        "description": "Dados inválidos",
+                        "description": "name, email and password are required",
                         "schema": {
                             "$ref": "#/definitions/http.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Erro interno",
+                        "description": "internal server error",
                         "schema": {
                             "$ref": "#/definitions/http.ErrorResponse"
                         }
@@ -222,7 +222,7 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "type": "string",
-                    "example": "descriptive error message"
+                    "example": "email already registered"
                 }
             }
         },

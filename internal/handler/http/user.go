@@ -33,9 +33,9 @@ type registerRequest struct {
 // @Produce      json
 // @Param        body  body      registerRequest       true  "Dados do usuário"
 // @Success      201   {object}  domain.User
-// @Failure      409   {object}  ErrorResponse     "Email já cadastrado"
-// @Failure      422   {object}  ErrorResponse     "Dados inválidos"
-// @Failure      500   {object}  ErrorResponse     "Erro interno"
+// @Failure      409   {object}  ErrorResponse  "email already registered"
+// @Failure      422   {object}  ErrorResponse  "name, email and password are required"
+// @Failure      500   {object}  ErrorResponse  "internal server error"
 // @Router       /users [post]
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
@@ -74,7 +74,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 // ErrorResponse is the standard error envelope returned by all endpoints.
 type ErrorResponse struct {
-	Error string `json:"error" example:"descriptive error message"`
+	Error string `json:"error" example:"email already registered"`
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
