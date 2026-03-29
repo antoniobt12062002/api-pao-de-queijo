@@ -26,10 +26,19 @@ func (app *application) mount() http.Handler {
 	})
 
 	r.Route("/v1", func(r chi.Router) {
+		// Public routes
 		r.Post("/users", app.userHandler.Register)
 		r.Post("/auth/login", app.authHandler.Login)
 		r.Get("/auth/github", app.authHandler.GitHubLogin)
 		r.Get("/auth/github/callback", app.authHandler.GitHubCallback)
+
+		// Authenticated routes
+		r.Group(func(r chi.Router) {
+			r.Use(handler.JWTMiddleware(app.config.jwtSecret))
+
+			r.Get("/config", app.configHandler.GetAll)
+			r.With(handler.AdminOnly).Put("/config", app.configHandler.Update)
+		})
 	})
 
 	r.Get("/swagger/*", httpSwagger.Handler(
@@ -53,14 +62,16 @@ func (app *application) run(h http.Handler) error {
 }
 
 type application struct {
-	config      config
-	userHandler *handler.UserHandler
-	authHandler *handler.AuthHandler
+	config        config
+	userHandler   *handler.UserHandler
+	authHandler   *handler.AuthHandler
+	configHandler *handler.ConfigHandler
 }
 
 type config struct {
-	addr string
-	db   dbConfig
+	addr      string
+	db        dbConfig
+	jwtSecret string
 }
 
 type dbConfig struct {
