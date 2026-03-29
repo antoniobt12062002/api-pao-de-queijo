@@ -1,5 +1,12 @@
 basePath: /v1
 definitions:
+  domain.Config:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
   domain.User:
     properties:
       created_at:
@@ -95,6 +102,13 @@ definitions:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     type: object
+  http.updateConfigRequest:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -180,6 +194,66 @@ paths:
       summary: Login com email e senha
       tags:
       - auth
+  /config:
+    get:
+      description: Retorna todas as configurações globais do sistema
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Config'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrInvalidCredentials'
+      security:
+      - BearerAuth: []
+      summary: Listar configurações
+      tags:
+      - config
+    put:
+      consumes:
+      - application/json
+      description: Atualiza o valor de uma chave de configuração (somente admin)
+      parameters:
+      - description: Chave e valor
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/http.updateConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Config'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrInvalidCredentials'
+        "403":
+          description: admin role required
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+      security:
+      - BearerAuth: []
+      summary: Atualizar configuração
+      tags:
+      - config
   /users:
     post:
       consumes:

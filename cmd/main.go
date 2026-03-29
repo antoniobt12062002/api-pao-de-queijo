@@ -54,16 +54,21 @@ func main() {
 		os.Getenv("GITHUB_CLIENT_SECRET"),
 		os.Getenv("GITHUB_CALLBACK_URL"),
 	)
+	configRepo    := postgres.NewConfigRepository(gormDB)
+	configUC      := usecase.NewConfigUseCase(configRepo)
+	configHandler := handler.NewConfigHandler(configUC)
 
 	cfg := &config{
-		addr: ":8080",
-		db:   dbConfig{dsn: dsn},
+		addr:      ":8080",
+		db:        dbConfig{dsn: dsn},
+		jwtSecret: os.Getenv("JWT_SECRET"),
 	}
 
 	api := &application{
-		config:      *cfg,
-		userHandler: userHandler,
-		authHandler: authHandler,
+		config:        *cfg,
+		userHandler:   userHandler,
+		authHandler:   authHandler,
+		configHandler: configHandler,
 	}
 
 	if err := api.run(api.mount()); err != nil {
