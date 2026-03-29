@@ -9,7 +9,7 @@ import (
 )
 
 type userModel struct {
-	ID           string    `gorm:"column:id;primaryKey"`
+	ID           string    `gorm:"type:uuid;column:id;primaryKey;default:gen_random_uuid()"`
 	Name         string    `gorm:"column:name"`
 	Email        string    `gorm:"column:email"`
 	PasswordHash *string   `gorm:"column:password_hash"`
