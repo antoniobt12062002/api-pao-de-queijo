@@ -46,10 +46,14 @@ func TestConfigUseCase_GetAll(t *testing.T) {
 }
 
 func TestConfigUseCase_Update_ValidKey(t *testing.T) {
-	uc := usecase.NewConfigUseCase(newMockConfigRepo())
+	repo := newMockConfigRepo()
+	uc := usecase.NewConfigUseCase(repo)
 	err := uc.Update("notify_at", "09:00")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
+	}
+	if repo.data["notify_at"] != "09:00" {
+		t.Errorf("expected notify_at to be updated to 09:00, got: %s", repo.data["notify_at"])
 	}
 }
 
@@ -59,7 +63,7 @@ func TestConfigUseCase_Update_UnknownKey(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for unknown key, got nil")
 	}
-	if err != domain.ErrConfigUnknownKey {
+	if !errors.Is(err, domain.ErrConfigUnknownKey) {
 		t.Errorf("expected ErrConfigUnknownKey, got: %v", err)
 	}
 }
