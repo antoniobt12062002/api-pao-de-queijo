@@ -25,6 +25,17 @@ type registerRequest struct {
 	Phone    *string `json:"phone"`
 }
 
+// Register godoc
+// @Summary      Cadastrar usuário
+// @Description  Cria um novo usuário com email e senha
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        body  body      registerRequest       true  "Dados do usuário"
+// @Success      201   {object}  domain.User
+// @Failure      409   {object}  map[string]string     "Email já cadastrado"
+// @Failure      422   {object}  map[string]string     "Dados inválidos"
+// @Router       /users [post]
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

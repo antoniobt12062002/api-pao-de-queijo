@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	handler "github.com/antoniobt12062002/pao-de-queijo/internal/handler/http"
+	_ "github.com/antoniobt12062002/pao-de-queijo/docs/swagger"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func (app *application) mount() http.Handler {
@@ -29,6 +31,10 @@ func (app *application) mount() http.Handler {
 		r.Get("/auth/github", app.authHandler.GitHubLogin)
 		r.Get("/auth/github/callback", app.authHandler.GitHubCallback)
 	})
+
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+	))
 
 	return r
 }

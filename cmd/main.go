@@ -11,6 +11,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// @title           API Pão de Queijo
+// @version         1.0
+// @description     API interna para o time de desenvolvimento.
+// @host            localhost:8080
+// @BasePath        /v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	// Setup logger first so all subsequent slog calls are structured
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))

@@ -47,6 +47,16 @@ type loginRequest struct {
 	Password string `json:"password" example:"s3nh4segura"`
 }
 
+// Login godoc
+// @Summary      Login com email e senha
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      loginRequest          true  "Credenciais"
+// @Success      200   {object}  map[string]string     "token JWT"
+// @Failure      401   {object}  map[string]string     "Credenciais inválidas"
+// @Failure      422   {object}  map[string]string     "Dados inválidos"
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -67,6 +77,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"token": token})
 }
 
+// GitHubLogin godoc
+// @Summary      Iniciar login com GitHub
+// @Description  Redireciona para o GitHub OAuth
+// @Tags         auth
+// @Success      302  "Redireciona para GitHub"
+// @Router       /auth/github [get]
 func (h *AuthHandler) GitHubLogin(w http.ResponseWriter, r *http.Request) {
 	state := generateState()
 	h.mu.Lock()
@@ -82,6 +98,17 @@ func (h *AuthHandler) GitHubLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
+// GitHubCallback godoc
+// @Summary      Callback do GitHub OAuth
+// @Description  GitHub chama este endpoint após autorização
+// @Tags         auth
+// @Produce      json
+// @Param        code   query  string  true  "Código do GitHub"
+// @Param        state  query  string  true  "State anti-CSRF"
+// @Success      200    {object}  map[string]string  "token JWT"
+// @Failure      400    {object}  map[string]string  "State inválido"
+// @Failure      502    {object}  map[string]string  "Erro no GitHub"
+// @Router       /auth/github/callback [get]
 func (h *AuthHandler) GitHubCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	code := r.URL.Query().Get("code")
