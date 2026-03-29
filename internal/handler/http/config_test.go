@@ -111,3 +111,18 @@ func TestConfigHandler_Update_MissingBody(t *testing.T) {
 		t.Errorf("expected 422, got %d", w.Code)
 	}
 }
+
+func TestConfigHandler_Update_MissingValue(t *testing.T) {
+	uc := usecase.NewConfigUseCase(newStubConfigRepo())
+	h := handler.NewConfigHandler(uc)
+
+	body := `{"key":"notify_at"}`
+	req := httptest.NewRequest(http.MethodPut, "/v1/config", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.Update(w, req)
+
+	if w.Code != http.StatusUnprocessableEntity {
+		t.Errorf("expected 422, got %d", w.Code)
+	}
+}

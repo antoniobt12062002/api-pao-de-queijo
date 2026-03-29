@@ -51,7 +51,7 @@ func (h *ConfigHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Success      200   {object}  domain.Config
 // @Failure      400   {object}  ErrValidation
 // @Failure      401   {object}  ErrInvalidCredentials
-// @Failure      403   {object}  ErrInternal
+// @Failure      403   {object}  ErrValidation  "admin role required"
 // @Failure      422   {object}  ErrValidation
 // @Router       /config [put]
 func (h *ConfigHandler) Update(w http.ResponseWriter, r *http.Request) {
