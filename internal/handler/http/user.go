@@ -35,6 +35,7 @@ type registerRequest struct {
 // @Success      201   {object}  domain.User
 // @Failure      409   {object}  map[string]string     "Email já cadastrado"
 // @Failure      422   {object}  map[string]string     "Dados inválidos"
+// @Failure      500   {object}  map[string]string     "Erro interno"
 // @Router       /users [post]
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest

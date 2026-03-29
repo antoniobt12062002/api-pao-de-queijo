@@ -74,6 +74,24 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "409": {
+                        "description": "Email já cadastrado com senha local",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "502": {
                         "description": "Erro no GitHub",
                         "schema": {
@@ -182,6 +200,15 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "Dados inválidos",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {

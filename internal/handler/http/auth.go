@@ -107,6 +107,8 @@ func (h *AuthHandler) GitHubLogin(w http.ResponseWriter, r *http.Request) {
 // @Param        state  query  string  true  "State anti-CSRF"
 // @Success      200    {object}  map[string]string  "token JWT"
 // @Failure      400    {object}  map[string]string  "State inválido"
+// @Failure      409    {object}  map[string]string  "Email já cadastrado com senha local"
+// @Failure      500    {object}  map[string]string  "Erro interno"
 // @Failure      502    {object}  map[string]string  "Erro no GitHub"
 // @Router       /auth/github/callback [get]
 func (h *AuthHandler) GitHubCallback(w http.ResponseWriter, r *http.Request) {
