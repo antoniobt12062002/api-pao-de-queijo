@@ -65,25 +65,25 @@ const docTemplate = `{
                     "400": {
                         "description": "invalid or expired state parameter",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/http.ErrInvalidState"
                         }
                     },
                     "409": {
                         "description": "email already registered with password login",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/http.ErrEmailConflictOAuth"
                         }
                     },
                     "500": {
                         "description": "internal server error",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/http.ErrInternal"
                         }
                     },
                     "502": {
                         "description": "failed to authenticate with GitHub",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/http.ErrGitHubAuth"
                         }
                     }
                 }
@@ -122,13 +122,13 @@ const docTemplate = `{
                     "401": {
                         "description": "invalid email or password",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/http.ErrInvalidCredentials"
                         }
                     },
                     "422": {
                         "description": "invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/http.ErrInvalidBody"
                         }
                     }
                 }
@@ -168,19 +168,19 @@ const docTemplate = `{
                     "409": {
                         "description": "email already registered",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/http.ErrEmailConflict"
                         }
                     },
                     "422": {
                         "description": "name, email and password are required",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/http.ErrValidation"
                         }
                     },
                     "500": {
                         "description": "internal server error",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/http.ErrInternal"
                         }
                     }
                 }
@@ -217,12 +217,75 @@ const docTemplate = `{
                 }
             }
         },
-        "http.ErrorResponse": {
+        "http.ErrEmailConflict": {
             "type": "object",
             "properties": {
                 "error": {
                     "type": "string",
                     "example": "email already registered"
+                }
+            }
+        },
+        "http.ErrEmailConflictOAuth": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "email already registered with password login"
+                }
+            }
+        },
+        "http.ErrGitHubAuth": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "failed to authenticate with GitHub"
+                }
+            }
+        },
+        "http.ErrInternal": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "internal server error"
+                }
+            }
+        },
+        "http.ErrInvalidBody": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "invalid request body"
+                }
+            }
+        },
+        "http.ErrInvalidCredentials": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "invalid email or password"
+                }
+            }
+        },
+        "http.ErrInvalidState": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "invalid or expired state parameter"
+                }
+            }
+        },
+        "http.ErrValidation": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "name, email and password are required"
                 }
             }
         },

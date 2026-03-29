@@ -19,10 +19,52 @@ definitions:
       updated_at:
         type: string
     type: object
-  http.ErrorResponse:
+  http.ErrEmailConflict:
     properties:
       error:
         example: email already registered
+        type: string
+    type: object
+  http.ErrEmailConflictOAuth:
+    properties:
+      error:
+        example: email already registered with password login
+        type: string
+    type: object
+  http.ErrGitHubAuth:
+    properties:
+      error:
+        example: failed to authenticate with GitHub
+        type: string
+    type: object
+  http.ErrInternal:
+    properties:
+      error:
+        example: internal server error
+        type: string
+    type: object
+  http.ErrInvalidBody:
+    properties:
+      error:
+        example: invalid request body
+        type: string
+    type: object
+  http.ErrInvalidCredentials:
+    properties:
+      error:
+        example: invalid email or password
+        type: string
+    type: object
+  http.ErrInvalidState:
+    properties:
+      error:
+        example: invalid or expired state parameter
+        type: string
+    type: object
+  http.ErrValidation:
+    properties:
+      error:
+        example: name, email and password are required
         type: string
     type: object
   http.loginRequest:
@@ -93,19 +135,19 @@ paths:
         "400":
           description: invalid or expired state parameter
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.ErrInvalidState'
         "409":
           description: email already registered with password login
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.ErrEmailConflictOAuth'
         "500":
           description: internal server error
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.ErrInternal'
         "502":
           description: failed to authenticate with GitHub
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.ErrGitHubAuth'
       summary: Callback do GitHub OAuth
       tags:
       - auth
@@ -130,11 +172,11 @@ paths:
         "401":
           description: invalid email or password
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.ErrInvalidCredentials'
         "422":
           description: invalid request body
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.ErrInvalidBody'
       summary: Login com email e senha
       tags:
       - auth
@@ -160,15 +202,15 @@ paths:
         "409":
           description: email already registered
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.ErrEmailConflict'
         "422":
           description: name, email and password are required
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.ErrValidation'
         "500":
           description: internal server error
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.ErrInternal'
       summary: Cadastrar usuário
       tags:
       - users

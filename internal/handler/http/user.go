@@ -33,9 +33,9 @@ type registerRequest struct {
 // @Produce      json
 // @Param        body  body      registerRequest       true  "Dados do usuário"
 // @Success      201   {object}  domain.User
-// @Failure      409   {object}  ErrorResponse  "email already registered"
-// @Failure      422   {object}  ErrorResponse  "name, email and password are required"
-// @Failure      500   {object}  ErrorResponse  "internal server error"
+// @Failure      409   {object}  ErrEmailConflict  "email already registered"
+// @Failure      422   {object}  ErrValidation     "name, email and password are required"
+// @Failure      500   {object}  ErrInternal       "internal server error"
 // @Router       /users [post]
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
@@ -74,7 +74,47 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 // ErrorResponse is the standard error envelope returned by all endpoints.
 type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+// ErrEmailConflict represents a 409 conflict when email is already registered.
+type ErrEmailConflict struct {
 	Error string `json:"error" example:"email already registered"`
+}
+
+// ErrValidation represents a 422 validation error.
+type ErrValidation struct {
+	Error string `json:"error" example:"name, email and password are required"`
+}
+
+// ErrInternal represents a 500 internal server error.
+type ErrInternal struct {
+	Error string `json:"error" example:"internal server error"`
+}
+
+// ErrInvalidCredentials represents a 401 unauthorized error.
+type ErrInvalidCredentials struct {
+	Error string `json:"error" example:"invalid email or password"`
+}
+
+// ErrInvalidBody represents a 422 error for an invalid request body.
+type ErrInvalidBody struct {
+	Error string `json:"error" example:"invalid request body"`
+}
+
+// ErrInvalidState represents a 400 error for an invalid OAuth state parameter.
+type ErrInvalidState struct {
+	Error string `json:"error" example:"invalid or expired state parameter"`
+}
+
+// ErrEmailConflictOAuth represents a 409 conflict when email is already registered via password login.
+type ErrEmailConflictOAuth struct {
+	Error string `json:"error" example:"email already registered with password login"`
+}
+
+// ErrGitHubAuth represents a 502 error when GitHub authentication fails.
+type ErrGitHubAuth struct {
+	Error string `json:"error" example:"failed to authenticate with GitHub"`
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

@@ -59,8 +59,8 @@ type tokenResponse struct {
 // @Produce      json
 // @Param        body  body      loginRequest          true  "Credenciais"
 // @Success      200   {object}  tokenResponse     "token JWT"
-// @Failure      401   {object}  ErrorResponse  "invalid email or password"
-// @Failure      422   {object}  ErrorResponse  "invalid request body"
+// @Failure      401   {object}  ErrInvalidCredentials  "invalid email or password"
+// @Failure      422   {object}  ErrInvalidBody         "invalid request body"
 // @Router       /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
@@ -111,10 +111,10 @@ func (h *AuthHandler) GitHubLogin(w http.ResponseWriter, r *http.Request) {
 // @Param        code   query  string  true  "Código do GitHub"
 // @Param        state  query  string  true  "State anti-CSRF"
 // @Success      200    {object}  tokenResponse  "token JWT"
-// @Failure      400    {object}  ErrorResponse  "invalid or expired state parameter"
-// @Failure      409    {object}  ErrorResponse  "email already registered with password login"
-// @Failure      500    {object}  ErrorResponse  "internal server error"
-// @Failure      502    {object}  ErrorResponse  "failed to authenticate with GitHub"
+// @Failure      400    {object}  ErrInvalidState       "invalid or expired state parameter"
+// @Failure      409    {object}  ErrEmailConflictOAuth "email already registered with password login"
+// @Failure      500    {object}  ErrInternal           "internal server error"
+// @Failure      502    {object}  ErrGitHubAuth         "failed to authenticate with GitHub"
 // @Router       /auth/github/callback [get]
 func (h *AuthHandler) GitHubCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
