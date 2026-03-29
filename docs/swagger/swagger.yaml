@@ -19,6 +19,12 @@ definitions:
       updated_at:
         type: string
     type: object
+  http.ErrorResponse:
+    properties:
+      error:
+        example: descriptive error message
+        type: string
+    type: object
   http.loginRequest:
     properties:
       email:
@@ -39,6 +45,12 @@ definitions:
       phone:
         type: string
       role:
+        type: string
+    type: object
+  http.tokenResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     type: object
 host: localhost:8080
@@ -77,33 +89,23 @@ paths:
         "200":
           description: token JWT
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.tokenResponse'
         "400":
           description: State inválido
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.ErrorResponse'
         "409":
           description: Email já cadastrado com senha local
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.ErrorResponse'
         "500":
           description: Erro interno
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.ErrorResponse'
         "502":
           description: Erro no GitHub
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.ErrorResponse'
       summary: Callback do GitHub OAuth
       tags:
       - auth
@@ -124,21 +126,15 @@ paths:
         "200":
           description: token JWT
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.tokenResponse'
         "401":
           description: Credenciais inválidas
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.ErrorResponse'
         "422":
           description: Dados inválidos
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.ErrorResponse'
       summary: Login com email e senha
       tags:
       - auth
@@ -164,21 +160,15 @@ paths:
         "409":
           description: Email já cadastrado
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.ErrorResponse'
         "422":
           description: Dados inválidos
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.ErrorResponse'
         "500":
           description: Erro interno
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/http.ErrorResponse'
       summary: Cadastrar usuário
       tags:
       - users

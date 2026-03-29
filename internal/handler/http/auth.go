@@ -47,15 +47,20 @@ type loginRequest struct {
 	Password string `json:"password" example:"s3nh4segura"`
 }
 
+// tokenResponse is the JWT token envelope returned on successful auth.
+type tokenResponse struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+}
+
 // Login godoc
 // @Summary      Login com email e senha
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        body  body      loginRequest          true  "Credenciais"
-// @Success      200   {object}  map[string]string     "token JWT"
-// @Failure      401   {object}  map[string]string     "Credenciais inválidas"
-// @Failure      422   {object}  map[string]string     "Dados inválidos"
+// @Success      200   {object}  tokenResponse     "token JWT"
+// @Failure      401   {object}  ErrorResponse     "Credenciais inválidas"
+// @Failure      422   {object}  ErrorResponse     "Dados inválidos"
 // @Router       /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
@@ -74,7 +79,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"token": token})
+	writeJSON(w, http.StatusOK, tokenResponse{Token: token})
 }
 
 // GitHubLogin godoc
@@ -105,11 +110,11 @@ func (h *AuthHandler) GitHubLogin(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        code   query  string  true  "Código do GitHub"
 // @Param        state  query  string  true  "State anti-CSRF"
-// @Success      200    {object}  map[string]string  "token JWT"
-// @Failure      400    {object}  map[string]string  "State inválido"
-// @Failure      409    {object}  map[string]string  "Email já cadastrado com senha local"
-// @Failure      500    {object}  map[string]string  "Erro interno"
-// @Failure      502    {object}  map[string]string  "Erro no GitHub"
+// @Success      200    {object}  tokenResponse  "token JWT"
+// @Failure      400    {object}  ErrorResponse  "State inválido"
+// @Failure      409    {object}  ErrorResponse  "Email já cadastrado com senha local"
+// @Failure      500    {object}  ErrorResponse  "Erro interno"
+// @Failure      502    {object}  ErrorResponse  "Erro no GitHub"
 // @Router       /auth/github/callback [get]
 func (h *AuthHandler) GitHubCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
@@ -156,7 +161,7 @@ func (h *AuthHandler) GitHubCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"token": token})
+	writeJSON(w, http.StatusOK, tokenResponse{Token: token})
 }
 
 type githubUser struct {
