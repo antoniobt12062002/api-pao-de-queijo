@@ -1,0 +1,190 @@
+basePath: /v1
+definitions:
+  domain.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      provider:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  http.loginRequest:
+    properties:
+      email:
+        example: joao@empresa.com
+        type: string
+      password:
+        example: s3nh4segura
+        type: string
+    type: object
+  http.registerRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      role:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API interna para o time de desenvolvimento.
+  title: API Pão de Queijo
+  version: "1.0"
+paths:
+  /auth/github:
+    get:
+      description: Redireciona para o GitHub OAuth
+      responses:
+        "302":
+          description: Redireciona para GitHub
+      summary: Iniciar login com GitHub
+      tags:
+      - auth
+  /auth/github/callback:
+    get:
+      description: GitHub chama este endpoint após autorização
+      parameters:
+      - description: Código do GitHub
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: State anti-CSRF
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token JWT
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: State inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Email já cadastrado com senha local
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Erro no GitHub
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Callback do GitHub OAuth
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Credenciais
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/http.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token JWT
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Credenciais inválidas
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login com email e senha
+      tags:
+      - auth
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo usuário com email e senha
+      parameters:
+      - description: Dados do usuário
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/http.registerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.User'
+        "409":
+          description: Email já cadastrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cadastrar usuário
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
