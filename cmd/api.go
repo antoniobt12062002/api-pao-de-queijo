@@ -38,6 +38,10 @@ func (app *application) mount() http.Handler {
 
 			r.Get("/config", app.configHandler.GetAll)
 			r.With(handler.AdminOnly).Put("/config", app.configHandler.Update)
+
+			r.Get("/rotation", app.rotationHandler.GetCurrent)
+			r.With(handler.AdminOnly).Put("/rotation/order", app.rotationHandler.UpdateOrder)
+			r.With(handler.AdminOnly).Post("/rotation/skip", app.rotationHandler.Skip)
 		})
 	})
 
@@ -62,10 +66,11 @@ func (app *application) run(h http.Handler) error {
 }
 
 type application struct {
-	config        config
-	userHandler   *handler.UserHandler
-	authHandler   *handler.AuthHandler
-	configHandler *handler.ConfigHandler
+	config          config
+	userHandler     *handler.UserHandler
+	authHandler     *handler.AuthHandler
+	configHandler   *handler.ConfigHandler
+	rotationHandler *handler.RotationHandler
 }
 
 type config struct {

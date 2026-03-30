@@ -7,6 +7,13 @@ definitions:
       value:
         type: string
     type: object
+  domain.RotationMember:
+    properties:
+      position:
+        type: integer
+      user_id:
+        type: string
+    type: object
   domain.User:
     properties:
       created_at:
@@ -108,6 +115,24 @@ definitions:
         type: string
       value:
         type: string
+    type: object
+  http.updateOrderRequest:
+    properties:
+      user_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  usecase.RotationResponse:
+    properties:
+      current_payer_id:
+        type: string
+      current_pos:
+        type: integer
+      members:
+        items:
+          $ref: '#/definitions/domain.RotationMember'
+        type: array
     type: object
 host: localhost:8080
 info:
@@ -254,6 +279,93 @@ paths:
       summary: Atualizar configuração
       tags:
       - config
+  /rotation:
+    get:
+      description: Retorna a fila circular de pagadores com a posição atual
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/usecase.RotationResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrInvalidCredentials'
+      security:
+      - BearerAuth: []
+      summary: Listar rodízio atual
+      tags:
+      - rotation
+  /rotation/order:
+    put:
+      consumes:
+      - application/json
+      description: Substitui a fila de pagadores (somente admin)
+      parameters:
+      - description: Array completo de user_ids na nova ordem
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/http.updateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrInvalidCredentials'
+        "403":
+          description: admin role required
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+      security:
+      - BearerAuth: []
+      summary: Atualizar ordem do rodízio
+      tags:
+      - rotation
+  /rotation/skip:
+    post:
+      description: Avança a posição atual da fila para o próximo usuário (somente
+        admin)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrInvalidCredentials'
+        "403":
+          description: admin role required
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+        "409":
+          description: rotation not initialized
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+      security:
+      - BearerAuth: []
+      summary: Pular vez no rodízio
+      tags:
+      - rotation
   /users:
     post:
       consumes:

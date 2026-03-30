@@ -223,6 +223,143 @@
                 }
             }
         },
+        "/rotation": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna a fila circular de pagadores com a posição atual",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rotation"
+                ],
+                "summary": "Listar rodízio atual",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/usecase.RotationResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrInvalidCredentials"
+                        }
+                    }
+                }
+            }
+        },
+        "/rotation/order": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Substitui a fila de pagadores (somente admin)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rotation"
+                ],
+                "summary": "Atualizar ordem do rodízio",
+                "parameters": [
+                    {
+                        "description": "Array completo de user_ids na nova ordem",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.updateOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrInvalidCredentials"
+                        }
+                    },
+                    "403": {
+                        "description": "admin role required",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    }
+                }
+            }
+        },
+        "/rotation/skip": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Avança a posição atual da fila para o próximo usuário (somente admin)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rotation"
+                ],
+                "summary": "Pular vez no rodízio",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrInvalidCredentials"
+                        }
+                    },
+                    "403": {
+                        "description": "admin role required",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    },
+                    "409": {
+                        "description": "rotation not initialized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "post": {
                 "description": "Cria um novo usuário com email e senha",
@@ -284,6 +421,17 @@
                     "type": "string"
                 },
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.RotationMember": {
+            "type": "object",
+            "properties": {
+                "position": {
+                    "type": "integer"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -439,6 +587,34 @@
                 },
                 "value": {
                     "type": "string"
+                }
+            }
+        },
+        "http.updateOrderRequest": {
+            "type": "object",
+            "properties": {
+                "user_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "usecase.RotationResponse": {
+            "type": "object",
+            "properties": {
+                "current_payer_id": {
+                    "type": "string"
+                },
+                "current_pos": {
+                    "type": "integer"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.RotationMember"
+                    }
                 }
             }
         }
