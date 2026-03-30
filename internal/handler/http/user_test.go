@@ -22,6 +22,8 @@ func (s *stubRepo) Create(u *domain.User) error {
 }
 func (s *stubRepo) FindByEmail(e string) (*domain.User, error) { u := s.users[e]; return u, nil }
 func (s *stubRepo) FindByProviderID(p, id string) (*domain.User, error) { return nil, nil }
+func (s *stubRepo) FindByID(id string) (*domain.User, error)            { return nil, nil }
+func (s *stubRepo) FindAll() ([]*domain.User, error)                    { return nil, nil }
 
 func TestRegisterHandler(t *testing.T) {
 	uc := usecase.NewUserUseCase(newStubRepo(), "secret")
