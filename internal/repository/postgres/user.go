@@ -67,6 +67,30 @@ func (r *UserRepository) FindByProviderID(provider, providerID string) (*domain.
 	return toDomain(&m), nil
 }
 
+func (r *UserRepository) FindByID(id string) (*domain.User, error) {
+	var m userModel
+	result := r.db.Where("id = ?", id).First(&m)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return toDomain(&m), nil
+}
+
+func (r *UserRepository) FindAll() ([]*domain.User, error) {
+	var models []userModel
+	if err := r.db.Find(&models).Error; err != nil {
+		return nil, err
+	}
+	users := make([]*domain.User, len(models))
+	for i, m := range models {
+		users[i] = toDomain(&m)
+	}
+	return users, nil
+}
+
 func toModel(u *domain.User) *userModel {
 	return &userModel{
 		ID:           u.ID,

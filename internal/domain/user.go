@@ -34,4 +34,6 @@ type UserRepository interface {
 	Create(user *User) error
 	FindByEmail(email string) (*User, error)
 	FindByProviderID(provider, providerID string) (*User, error)
+	FindByID(id string) (*User, error)
+	FindAll() ([]*User, error)
 }

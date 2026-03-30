@@ -58,6 +58,10 @@ func main() {
 	configUC      := usecase.NewConfigUseCase(configRepo)
 	configHandler := handler.NewConfigHandler(configUC)
 
+	rotationRepo    := postgres.NewRotationRepository(gormDB)
+	rotationUC      := usecase.NewRotationUseCase(rotationRepo, userRepo)
+	rotationHandler := handler.NewRotationHandler(rotationUC)
+
 	cfg := &config{
 		addr:      ":8080",
 		db:        dbConfig{dsn: dsn},
@@ -65,10 +69,11 @@ func main() {
 	}
 
 	api := &application{
-		config:        *cfg,
-		userHandler:   userHandler,
-		authHandler:   authHandler,
-		configHandler: configHandler,
+		config:          *cfg,
+		userHandler:     userHandler,
+		authHandler:     authHandler,
+		configHandler:   configHandler,
+		rotationHandler: rotationHandler,
 	}
 
 	if err := api.run(api.mount()); err != nil {

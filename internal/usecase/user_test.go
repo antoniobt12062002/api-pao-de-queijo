@@ -40,6 +40,23 @@ func (m *mockRepo) FindByProviderID(provider, providerID string) (*domain.User, 
 	return nil, nil
 }
 
+func (m *mockRepo) FindByID(id string) (*domain.User, error) {
+	for _, u := range m.users {
+		if u.ID == id {
+			return u, nil
+		}
+	}
+	return nil, nil
+}
+
+func (m *mockRepo) FindAll() ([]*domain.User, error) {
+	users := make([]*domain.User, 0, len(m.users))
+	for _, u := range m.users {
+		users = append(users, u)
+	}
+	return users, nil
+}
+
 func TestCreateUser(t *testing.T) {
 	repo := newMockRepo()
 	uc := usecase.NewUserUseCase(repo, "test-jwt-secret")
