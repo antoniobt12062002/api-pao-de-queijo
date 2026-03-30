@@ -366,6 +366,204 @@ const docTemplate = `{
                 }
             }
         },
+        "/rounds": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna histórico paginado de rodadas",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rounds"
+                ],
+                "summary": "Listar rodadas",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Página (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Itens por página (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/usecase.PaginatedRoundsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrInvalidCredentials"
+                        }
+                    }
+                }
+            }
+        },
+        "/rounds/today": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna a rodada do dia atual com campo is_payer para o usuário autenticado",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rounds"
+                ],
+                "summary": "Rodada de hoje",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/usecase.TodayRoundResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrInvalidCredentials"
+                        }
+                    }
+                }
+            }
+        },
+        "/rounds/{id}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Pagador cancela a rodada; próximo da fila é notificado",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rounds"
+                ],
+                "summary": "Cancelar pagamento",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Round ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrInvalidCredentials"
+                        }
+                    },
+                    "403": {
+                        "description": "payer only",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    },
+                    "409": {
+                        "description": "round not in pending status",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    }
+                }
+            }
+        },
+        "/rounds/{id}/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Pagador confirma a rodada, abrindo para participações",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rounds"
+                ],
+                "summary": "Confirmar pagamento",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Round ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrInvalidCredentials"
+                        }
+                    },
+                    "403": {
+                        "description": "payer only",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    },
+                    "409": {
+                        "description": "round not in pending status",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrValidation"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "post": {
                 "description": "Cria um novo usuário com email e senha",
@@ -441,6 +639,48 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "domain.Round": {
+            "type": "object",
+            "properties": {
+                "closes_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "date": {
+                    "description": "\"YYYY-MM-DD\"",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "notify_at": {
+                    "type": "string"
+                },
+                "payer_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.RoundStatus"
+                }
+            }
+        },
+        "domain.RoundStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "open",
+                "closed",
+                "cancelled"
+            ],
+            "x-enum-varnames": [
+                "RoundStatusPending",
+                "RoundStatusOpen",
+                "RoundStatusClosed",
+                "RoundStatusCancelled"
+            ]
         },
         "domain.User": {
             "type": "object",
@@ -607,6 +847,26 @@ const docTemplate = `{
                 }
             }
         },
+        "usecase.PaginatedRoundsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Round"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "usecase.RotationResponse": {
             "type": "object",
             "properties": {
@@ -621,6 +881,36 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/domain.RotationMember"
                     }
+                }
+            }
+        },
+        "usecase.TodayRoundResponse": {
+            "type": "object",
+            "properties": {
+                "closes_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "date": {
+                    "description": "\"YYYY-MM-DD\"",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_payer": {
+                    "type": "boolean"
+                },
+                "notify_at": {
+                    "type": "string"
+                },
+                "payer_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.RoundStatus"
                 }
             }
         }

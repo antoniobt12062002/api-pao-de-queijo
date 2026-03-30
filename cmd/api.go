@@ -42,6 +42,11 @@ func (app *application) mount() http.Handler {
 			r.Get("/rotation", app.rotationHandler.GetCurrent)
 			r.With(handler.AdminOnly).Put("/rotation/order", app.rotationHandler.UpdateOrder)
 			r.With(handler.AdminOnly).Post("/rotation/skip", app.rotationHandler.Skip)
+
+			r.Get("/rounds", app.roundHandler.GetAll)
+			r.Get("/rounds/today", app.roundHandler.GetToday)
+			r.Post("/rounds/{id}/confirm", app.roundHandler.Confirm)
+			r.Post("/rounds/{id}/cancel", app.roundHandler.Cancel)
 		})
 	})
 
@@ -71,6 +76,7 @@ type application struct {
 	authHandler     *handler.AuthHandler
 	configHandler   *handler.ConfigHandler
 	rotationHandler *handler.RotationHandler
+	roundHandler    *handler.RoundHandler
 }
 
 type config struct {
