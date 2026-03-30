@@ -15,6 +15,9 @@ const (
 	contextKeyRole   contextKey = "role"
 )
 
+// ContextKeyUserID é exportado para uso em testes de outros pacotes.
+const ContextKeyUserID = contextKeyUserID
+
 // JWTMiddleware valida o token Bearer e injeta user_id e role no contexto.
 // Retorna 401 se o token estiver ausente ou inválido.
 func JWTMiddleware(secret string) func(http.Handler) http.Handler {
