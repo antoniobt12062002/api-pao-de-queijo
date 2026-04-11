@@ -48,7 +48,6 @@ func (m *mockParticipationRepo) Delete(roundID, userID string) error {
 	if _, exists := m.byRoundUser[key]; !exists {
 		return domain.ErrParticipationNotFound
 	}
-	p := m.byRoundUser[key]
 	delete(m.byRoundUser, key)
 	list := m.byRound[roundID]
 	for i, item := range list {
@@ -57,7 +56,6 @@ func (m *mockParticipationRepo) Delete(roundID, userID string) error {
 			break
 		}
 	}
-	_ = p
 	return nil
 }
 
