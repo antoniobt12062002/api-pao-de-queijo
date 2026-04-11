@@ -3,9 +3,14 @@ package main
 import (
 	"log/slog"
 	"os"
+	"strconv"
+	"strings"
 
+	"github.com/robfig/cron/v3"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/db"
+	"github.com/antoniobt12062002/pao-de-queijo/internal/domain"
 	handler "github.com/antoniobt12062002/pao-de-queijo/internal/handler/http"
+	"github.com/antoniobt12062002/pao-de-queijo/internal/job"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/repository/postgres"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/usecase"
 	"github.com/joho/godotenv"
@@ -62,6 +67,42 @@ func main() {
 	rotationUC      := usecase.NewRotationUseCase(rotationRepo, userRepo)
 	rotationHandler := handler.NewRotationHandler(rotationUC)
 
+	roundRepo    := postgres.NewRoundRepository(gormDB)
+	noopNotify   := &domain.NoopNotificationService{}
+	noopScore    := &domain.NoopScoreUpdater{}
+	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, noopNotify)
+	roundHandler := handler.NewRoundHandler(roundUC)
+
+	// Background jobs
+	closer  := job.NewParticipationWindowCloser(roundRepo, noopNotify, noopScore)
+	reminder := job.NewReminderSender(roundRepo, noopNotify)
+	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, noopNotify, closer, reminder)
+
+	// Scheduler: lê notify_at da config para montar expressão cron
+	notifyAt := "08:00"
+	if configs, err := configRepo.GetAll(); err == nil {
+		for _, c := range configs {
+			if c.Key == "notify_at" {
+				notifyAt = c.Value
+			}
+		}
+	}
+	parts := strings.Split(notifyAt, ":")
+	hour, minute := "8", "0"
+	if len(parts) == 2 {
+		hour = strconv.Itoa(mustAtoi(parts[0]))
+		minute = strconv.Itoa(mustAtoi(parts[1]))
+	}
+	cronExpr := "0 " + minute + " " + hour + " * * *"
+
+	c := cron.New(cron.WithSeconds())
+	if _, err := c.AddFunc(cronExpr, creator.Run); err != nil {
+		slog.Error("failed to schedule DailyRoundCreator", "err", err)
+		os.Exit(1)
+	}
+	c.Start()
+	slog.Info("cron scheduler started", "DailyRoundCreator", cronExpr)
+
 	cfg := &config{
 		addr:      ":8080",
 		db:        dbConfig{dsn: dsn},
@@ -74,10 +115,19 @@ func main() {
 		authHandler:     authHandler,
 		configHandler:   configHandler,
 		rotationHandler: rotationHandler,
+		roundHandler:    roundHandler,
 	}
 
 	if err := api.run(api.mount()); err != nil {
 		slog.Error("error starting server", "err", err)
 		os.Exit(1)
 	}
+}
+
+func mustAtoi(s string) int {
+	n, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil {
+		return 0
+	}
+	return n
 }

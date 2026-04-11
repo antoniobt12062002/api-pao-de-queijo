@@ -14,6 +14,36 @@ definitions:
       user_id:
         type: string
     type: object
+  domain.Round:
+    properties:
+      closes_at:
+        type: string
+      created_at:
+        type: string
+      date:
+        description: '"YYYY-MM-DD"'
+        type: string
+      id:
+        type: string
+      notify_at:
+        type: string
+      payer_id:
+        type: string
+      status:
+        $ref: '#/definitions/domain.RoundStatus'
+    type: object
+  domain.RoundStatus:
+    enum:
+    - pending
+    - open
+    - closed
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - RoundStatusPending
+    - RoundStatusOpen
+    - RoundStatusClosed
+    - RoundStatusCancelled
   domain.User:
     properties:
       created_at:
@@ -123,6 +153,19 @@ definitions:
           type: string
         type: array
     type: object
+  usecase.PaginatedRoundsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/domain.Round'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
   usecase.RotationResponse:
     properties:
       current_payer_id:
@@ -133,6 +176,26 @@ definitions:
         items:
           $ref: '#/definitions/domain.RotationMember'
         type: array
+    type: object
+  usecase.TodayRoundResponse:
+    properties:
+      closes_at:
+        type: string
+      created_at:
+        type: string
+      date:
+        description: '"YYYY-MM-DD"'
+        type: string
+      id:
+        type: string
+      is_payer:
+        type: boolean
+      notify_at:
+        type: string
+      payer_id:
+        type: string
+      status:
+        $ref: '#/definitions/domain.RoundStatus'
     type: object
 host: localhost:8080
 info:
@@ -366,6 +429,132 @@ paths:
       summary: Pular vez no rodízio
       tags:
       - rotation
+  /rounds:
+    get:
+      description: Retorna histórico paginado de rodadas
+      parameters:
+      - description: Página (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Itens por página (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/usecase.PaginatedRoundsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrInvalidCredentials'
+      security:
+      - BearerAuth: []
+      summary: Listar rodadas
+      tags:
+      - rounds
+  /rounds/{id}/cancel:
+    post:
+      description: Pagador cancela a rodada; próximo da fila é notificado
+      parameters:
+      - description: Round ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrInvalidCredentials'
+        "403":
+          description: payer only
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+        "409":
+          description: round not in pending status
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+      security:
+      - BearerAuth: []
+      summary: Cancelar pagamento
+      tags:
+      - rounds
+  /rounds/{id}/confirm:
+    post:
+      description: Pagador confirma a rodada, abrindo para participações
+      parameters:
+      - description: Round ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrInvalidCredentials'
+        "403":
+          description: payer only
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+        "409":
+          description: round not in pending status
+          schema:
+            $ref: '#/definitions/http.ErrValidation'
+      security:
+      - BearerAuth: []
+      summary: Confirmar pagamento
+      tags:
+      - rounds
+  /rounds/today:
+    get:
+      description: Retorna a rodada do dia atual com campo is_payer para o usuário
+        autenticado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/usecase.TodayRoundResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrInvalidCredentials'
+      security:
+      - BearerAuth: []
+      summary: Rodada de hoje
+      tags:
+      - rounds
   /users:
     post:
       consumes:
