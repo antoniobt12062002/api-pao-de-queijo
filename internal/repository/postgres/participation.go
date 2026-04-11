@@ -64,7 +64,14 @@ func (r *ParticipationRepository) GetByRound(roundID string) ([]*domain.Particip
 }
 
 func (r *ParticipationRepository) Delete(roundID, userID string) error {
-	return r.db.Where("round_id = ? AND user_id = ?", roundID, userID).Delete(&participationModel{}).Error
+	result := r.db.Where("round_id = ? AND user_id = ?", roundID, userID).Delete(&participationModel{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return domain.ErrParticipationNotFound
+	}
+	return nil
 }
 
 func toDomainParticipation(m *participationModel) *domain.Participation {
