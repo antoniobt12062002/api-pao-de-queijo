@@ -83,6 +83,7 @@ type stubNotifySvcForRound struct{}
 func (s *stubNotifySvcForRound) SendRoundAnnounced(id string) error    { return nil }
 func (s *stubNotifySvcForRound) SendRoundClosed(id string) error       { return nil }
 func (s *stubNotifySvcForRound) SendReminder(ids []string) error        { return nil }
+func (s *stubNotifySvcForRound) SendParticipationOpen(ids []string) error { return nil }
 
 // withUserID injects user_id into context to simulate JWTMiddleware
 func withUserID(r *http.Request, userID string) *http.Request {
