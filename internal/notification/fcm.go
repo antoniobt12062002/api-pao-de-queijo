@@ -105,7 +105,8 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 		}
 	}
 
-	// Log one Notification entry per user (not per token).
+	// Log one Notification entry per user (not per token) regardless of delivery outcome.
+	// The audit log records the attempt, not the delivery confirmation.
 	for _, userID := range userIDs {
 		if logErr := s.notifRepo.Create(&domain.Notification{
 			UserID:  userID,

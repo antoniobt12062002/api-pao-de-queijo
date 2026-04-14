@@ -133,8 +133,9 @@ func TestFCMService_SendParticipationOpen_MultipleUsers(t *testing.T) {
 
 // TestFCMService_FailedResponse_NoCrash verifies fire-and-forget: a failed FCM
 // response does not cause SendRoundAnnounced to return an error.
-// Note: real Firebase invalid-token cleanup (messaging.IsRegistrationTokenNotRegistered)
-// requires an actual Firebase error type and is verified manually/integration only.
+// The audit log is still written on failed delivery (records the attempt, not confirmation).
+// Note: real Firebase invalid-token cleanup (messaging.IsUnregistered) requires an actual
+// Firebase error type and is verified manually/integration only.
 func TestFCMService_FailedResponse_NoCrash(t *testing.T) {
 	sender := &mockFCMSender{
 		resp: &messaging.BatchResponse{
@@ -151,5 +152,9 @@ func TestFCMService_FailedResponse_NoCrash(t *testing.T) {
 	svc := notification.NewFCMNotificationServiceWithSender(sender, deviceRepo, notifRepo)
 	if err := svc.SendRoundAnnounced("payer-1", "round-1"); err != nil {
 		t.Errorf("expected nil (fire-and-forget), got: %v", err)
+	}
+	// Audit log is still written even on delivery failure.
+	if len(notifRepo.created) != 1 {
+		t.Errorf("expected 1 audit log entry even on failure, got %d", len(notifRepo.created))
 	}
 }
