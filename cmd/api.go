@@ -47,6 +47,10 @@ func (app *application) mount() http.Handler {
 			r.Get("/rounds/today", app.roundHandler.GetToday)
 			r.Post("/rounds/{id}/confirm", app.roundHandler.Confirm)
 			r.Post("/rounds/{id}/cancel", app.roundHandler.Cancel)
+
+			r.Post("/rounds/{id}/participate", app.participationHandler.Participate)
+			r.Delete("/rounds/{id}/participate", app.participationHandler.Withdraw)
+			r.Get("/rounds/{id}/participations", app.participationHandler.GetParticipations)
 		})
 	})
 
@@ -71,12 +75,13 @@ func (app *application) run(h http.Handler) error {
 }
 
 type application struct {
-	config          config
-	userHandler     *handler.UserHandler
-	authHandler     *handler.AuthHandler
-	configHandler   *handler.ConfigHandler
-	rotationHandler *handler.RotationHandler
-	roundHandler    *handler.RoundHandler
+	config               config
+	userHandler          *handler.UserHandler
+	authHandler          *handler.AuthHandler
+	configHandler        *handler.ConfigHandler
+	rotationHandler      *handler.RotationHandler
+	roundHandler         *handler.RoundHandler
+	participationHandler *handler.ParticipationHandler
 }
 
 type config struct {

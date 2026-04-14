@@ -73,6 +73,10 @@ func main() {
 	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, noopNotify)
 	roundHandler := handler.NewRoundHandler(roundUC)
 
+	participationRepo    := postgres.NewParticipationRepository(gormDB)
+	participationUC      := usecase.NewParticipationUseCase(participationRepo, roundRepo)
+	participationHandler := handler.NewParticipationHandler(participationUC)
+
 	// Background jobs
 	closer  := job.NewParticipationWindowCloser(roundRepo, noopNotify, noopScore)
 	reminder := job.NewReminderSender(roundRepo, noopNotify)
@@ -110,12 +114,13 @@ func main() {
 	}
 
 	api := &application{
-		config:          *cfg,
-		userHandler:     userHandler,
-		authHandler:     authHandler,
-		configHandler:   configHandler,
-		rotationHandler: rotationHandler,
-		roundHandler:    roundHandler,
+		config:               *cfg,
+		userHandler:          userHandler,
+		authHandler:          authHandler,
+		configHandler:        configHandler,
+		rotationHandler:      rotationHandler,
+		roundHandler:         roundHandler,
+		participationHandler: participationHandler,
 	}
 
 	if err := api.run(api.mount()); err != nil {

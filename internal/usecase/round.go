@@ -81,7 +81,19 @@ func (uc *RoundUseCase) Confirm(roundID, callerID string) error {
 		return domain.ErrRoundNotPending
 	}
 	round.Status = domain.RoundStatusOpen
-	return uc.roundRepo.Update(round)
+	if err := uc.roundRepo.Update(round); err != nil {
+		return err
+	}
+	// Notifica todos os membros da rotação que a rodada está aberta para participação
+	rotation, err := uc.rotationRepo.Get()
+	if err == nil && rotation != nil && len(rotation.Members) > 0 {
+		userIDs := make([]string, len(rotation.Members))
+		for i, m := range rotation.Members {
+			userIDs[i] = m.UserID
+		}
+		_ = uc.notifySvc.SendParticipationOpen(userIDs)
+	}
+	return nil
 }
 
 func (uc *RoundUseCase) Cancel(roundID, callerID string) error {
