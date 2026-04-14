@@ -27,6 +27,8 @@ func NewDeviceTokenRepository(db *gorm.DB) *DeviceTokenRepository {
 }
 
 // Upsert inserts a new token or updates user_id/platform if the token already exists.
+// Note: dt.ID is not back-filled because this uses a raw Exec (no model scan).
+// Callers do not need the generated ID after an upsert.
 func (r *DeviceTokenRepository) Upsert(dt *domain.DeviceToken) error {
 	return r.db.Exec(
 		`INSERT INTO device_tokens (id, user_id, token, platform, created_at)
@@ -60,7 +62,14 @@ func (r *DeviceTokenRepository) GetTokensByUserIDs(userIDs []string) ([]string, 
 }
 
 func (r *DeviceTokenRepository) DeleteByToken(token string) error {
-	return r.db.Where("token = ?", token).Delete(&deviceTokenModel{}).Error
+	result := r.db.Where("token = ?", token).Delete(&deviceTokenModel{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return domain.ErrDeviceTokenNotFound
+	}
+	return nil
 }
 
 func toDomainDeviceToken(m *deviceTokenModel) *domain.DeviceToken {
