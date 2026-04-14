@@ -80,10 +80,10 @@ func (s *stubRotationRepoForRound) AdvancePosition() error {
 
 type stubNotifySvcForRound struct{}
 
-func (s *stubNotifySvcForRound) SendRoundAnnounced(id string) error    { return nil }
-func (s *stubNotifySvcForRound) SendRoundClosed(id string) error       { return nil }
-func (s *stubNotifySvcForRound) SendReminder(ids []string) error        { return nil }
-func (s *stubNotifySvcForRound) SendParticipationOpen(ids []string) error { return nil }
+func (s *stubNotifySvcForRound) SendRoundAnnounced(id, roundID string) error            { return nil }
+func (s *stubNotifySvcForRound) SendParticipationOpen(ids []string, roundID string) error { return nil }
+func (s *stubNotifySvcForRound) SendRoundClosed(id, roundID string) error               { return nil }
+func (s *stubNotifySvcForRound) SendReminder(ids []string, roundID string) error        { return nil }
 
 // withUserID injects user_id into context to simulate JWTMiddleware
 func withUserID(r *http.Request, userID string) *http.Request {

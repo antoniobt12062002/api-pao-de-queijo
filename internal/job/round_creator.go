@@ -111,7 +111,7 @@ func (j *DailyRoundCreator) Run() {
 	}
 
 	// Notifica o pagador (noop por enquanto)
-	if err := j.notifySvc.SendRoundAnnounced(payerID); err != nil {
+	if err := j.notifySvc.SendRoundAnnounced(payerID, round.ID); err != nil {
 		slog.Error("DailyRoundCreator: error sending notification", "err", err)
 	}
 }

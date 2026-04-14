@@ -91,7 +91,7 @@ func (uc *RoundUseCase) Confirm(roundID, callerID string) error {
 		for i, m := range rotation.Members {
 			userIDs[i] = m.UserID
 		}
-		_ = uc.notifySvc.SendParticipationOpen(userIDs)
+		_ = uc.notifySvc.SendParticipationOpen(userIDs, roundID)
 	}
 	return nil
 }
@@ -132,6 +132,6 @@ func (uc *RoundUseCase) Cancel(roundID, callerID string) error {
 	}
 
 	// Notifica o novo pagador (noop por enquanto)
-	_ = uc.notifySvc.SendRoundAnnounced(round.PayerID)
+	_ = uc.notifySvc.SendRoundAnnounced(round.PayerID, round.ID)
 	return nil
 }

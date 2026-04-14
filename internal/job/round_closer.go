@@ -52,7 +52,7 @@ func (j *ParticipationWindowCloser) Run() {
 	slog.Info("ParticipationWindowCloser: round closed", "id", round.ID)
 
 	// Notifica o pagador (noop por enquanto)
-	if err := j.notifySvc.SendRoundClosed(round.PayerID); err != nil {
+	if err := j.notifySvc.SendRoundClosed(round.PayerID, round.ID); err != nil {
 		slog.Error("ParticipationWindowCloser: error sending notification", "err", err)
 	}
 
