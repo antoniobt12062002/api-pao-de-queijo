@@ -95,7 +95,7 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 
 	for i, resp := range br.Responses {
 		if !resp.Success {
-			if messaging.IsRegistrationTokenNotRegistered(resp.Error) || messaging.IsInvalidArgument(resp.Error) {
+			if messaging.IsUnregistered(resp.Error) || messaging.IsInvalidArgument(resp.Error) {
 				if deleteErr := s.deviceRepo.DeleteByToken(tokens[i]); deleteErr != nil {
 					slog.Error("FCMNotificationService: error deleting invalid token", "token", tokens[i], "err", deleteErr)
 				}
