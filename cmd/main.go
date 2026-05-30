@@ -11,6 +11,7 @@ import (
 	"github.com/antoniobt12062002/pao-de-queijo/internal/domain"
 	handler "github.com/antoniobt12062002/pao-de-queijo/internal/handler/http"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/job"
+	"github.com/antoniobt12062002/pao-de-queijo/internal/notification"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/repository/postgres"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/usecase"
 	"github.com/joho/godotenv"
@@ -38,6 +39,8 @@ func main() {
 		slog.Error("DB_DSN environment variable is required")
 		os.Exit(1)
 	}
+
+	firebaseCredentials := os.Getenv("FIREBASE_CREDENTIALS_JSON")
 
 	if err := db.RunMigrations(dsn); err != nil {
 		slog.Error("failed to run migrations", "err", err)
@@ -68,19 +71,39 @@ func main() {
 	rotationHandler := handler.NewRotationHandler(rotationUC)
 
 	roundRepo    := postgres.NewRoundRepository(gormDB)
-	noopNotify   := &domain.NoopNotificationService{}
 	noopScore    := &domain.NoopScoreUpdater{}
-	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, noopNotify)
-	roundHandler := handler.NewRoundHandler(roundUC)
 
 	participationRepo    := postgres.NewParticipationRepository(gormDB)
 	participationUC      := usecase.NewParticipationUseCase(participationRepo, roundRepo)
 	participationHandler := handler.NewParticipationHandler(participationUC)
 
+	deviceTokenRepo := postgres.NewDeviceTokenRepository(gormDB)
+	notifLogRepo    := postgres.NewNotificationLogRepository(gormDB)
+
+	var notifySvc domain.NotificationService
+	if firebaseCredentials != "" {
+		fcmSvc, err := notification.NewFCMNotificationService([]byte(firebaseCredentials), deviceTokenRepo, notifLogRepo)
+		if err != nil {
+			slog.Error("failed to initialize Firebase FCM", "err", err)
+			os.Exit(1)
+		}
+		notifySvc = fcmSvc
+		slog.Info("Firebase FCM notification service initialized")
+	} else {
+		slog.Warn("FIREBASE_CREDENTIALS_JSON not set — using noop notification service")
+		notifySvc = &domain.NoopNotificationService{}
+	}
+
+	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, notifySvc)
+	roundHandler := handler.NewRoundHandler(roundUC)
+
+	deviceTokenUC      := usecase.NewDeviceTokenUseCase(deviceTokenRepo)
+	deviceTokenHandler := handler.NewDeviceTokenHandler(deviceTokenUC)
+
 	// Background jobs
-	closer  := job.NewParticipationWindowCloser(roundRepo, noopNotify, noopScore)
-	reminder := job.NewReminderSender(roundRepo, noopNotify)
-	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, noopNotify, closer, reminder)
+	closer  := job.NewParticipationWindowCloser(roundRepo, notifySvc, noopScore)
+	reminder := job.NewReminderSender(roundRepo, participationRepo, notifySvc)
+	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, notifySvc, closer, reminder)
 
 	// Scheduler: lê notify_at da config para montar expressão cron
 	notifyAt := "08:00"
@@ -121,6 +144,7 @@ func main() {
 		rotationHandler:      rotationHandler,
 		roundHandler:         roundHandler,
 		participationHandler: participationHandler,
+		deviceHandler:        deviceTokenHandler,
 	}
 
 	if err := api.run(api.mount()); err != nil {
