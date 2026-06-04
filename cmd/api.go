@@ -54,6 +54,10 @@ func (app *application) mount() http.Handler {
 
 			r.Post("/devices", app.deviceHandler.Register)
 			r.Delete("/devices/{token}", app.deviceHandler.Remove)
+
+			r.Get("/scores", app.scoreHandler.GetRanking)
+			r.Get("/scores/{user_id}", app.scoreHandler.GetUserScore)
+			r.Get("/badges/{user_id}", app.scoreHandler.GetUserBadges)
 		})
 	})
 
@@ -86,6 +90,7 @@ type application struct {
 	roundHandler         *handler.RoundHandler
 	participationHandler *handler.ParticipationHandler
 	deviceHandler        *handler.DeviceTokenHandler
+	scoreHandler         *handler.ScoreHandler
 }
 
 type config struct {

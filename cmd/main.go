@@ -13,6 +13,7 @@ import (
 	"github.com/antoniobt12062002/pao-de-queijo/internal/job"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/notification"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/repository/postgres"
+	"github.com/antoniobt12062002/pao-de-queijo/internal/score"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/usecase"
 	"github.com/joho/godotenv"
 )
@@ -70,8 +71,7 @@ func main() {
 	rotationUC      := usecase.NewRotationUseCase(rotationRepo, userRepo)
 	rotationHandler := handler.NewRotationHandler(rotationUC)
 
-	roundRepo    := postgres.NewRoundRepository(gormDB)
-	noopScore    := &domain.NoopScoreUpdater{}
+	roundRepo := postgres.NewRoundRepository(gormDB)
 
 	participationRepo    := postgres.NewParticipationRepository(gormDB)
 	participationUC      := usecase.NewParticipationUseCase(participationRepo, roundRepo)
@@ -79,6 +79,8 @@ func main() {
 
 	deviceTokenRepo := postgres.NewDeviceTokenRepository(gormDB)
 	notifLogRepo    := postgres.NewNotificationLogRepository(gormDB)
+	scoreRepo       := postgres.NewScoreRepository(gormDB)
+	badgeRepo       := postgres.NewBadgeRepository(gormDB)
 
 	var notifySvc domain.NotificationService
 	if firebaseCredentials != "" {
@@ -94,14 +96,20 @@ func main() {
 		notifySvc = &domain.NoopNotificationService{}
 	}
 
-	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, notifySvc)
+	scoreUpdater  := score.NewScoreUpdater(roundRepo, participationRepo, configRepo, scoreRepo)
+	badgeChecker  := score.NewBadgeChecker(roundRepo, participationRepo, configRepo, scoreRepo, badgeRepo)
+
+	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, notifySvc, scoreUpdater)
 	roundHandler := handler.NewRoundHandler(roundUC)
 
 	deviceTokenUC      := usecase.NewDeviceTokenUseCase(deviceTokenRepo)
 	deviceTokenHandler := handler.NewDeviceTokenHandler(deviceTokenUC)
 
+	scoreUC      := usecase.NewScoreUseCase(scoreRepo, badgeRepo, userRepo)
+	scoreHandler := handler.NewScoreHandler(scoreUC)
+
 	// Background jobs
-	closer  := job.NewParticipationWindowCloser(roundRepo, notifySvc, noopScore)
+	closer  := job.NewParticipationWindowCloser(roundRepo, notifySvc, scoreUpdater, badgeChecker)
 	reminder := job.NewReminderSender(roundRepo, participationRepo, notifySvc)
 	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, notifySvc, closer, reminder)
 
@@ -145,6 +153,7 @@ func main() {
 		roundHandler:         roundHandler,
 		participationHandler: participationHandler,
 		deviceHandler:        deviceTokenHandler,
+		scoreHandler:         scoreHandler,
 	}
 
 	if err := api.run(api.mount()); err != nil {
