@@ -12,17 +12,20 @@ type ParticipationWindowCloser struct {
 	roundRepo    domain.RoundRepository
 	notifySvc    domain.NotificationService
 	scoreUpdater domain.ScoreUpdater
+	badgeChecker domain.BadgeChecker
 }
 
 func NewParticipationWindowCloser(
 	roundRepo domain.RoundRepository,
 	notifySvc domain.NotificationService,
 	scoreUpdater domain.ScoreUpdater,
+	badgeChecker domain.BadgeChecker,
 ) *ParticipationWindowCloser {
 	return &ParticipationWindowCloser{
 		roundRepo:    roundRepo,
 		notifySvc:    notifySvc,
 		scoreUpdater: scoreUpdater,
+		badgeChecker: badgeChecker,
 	}
 }
 
@@ -59,6 +62,10 @@ func (j *ParticipationWindowCloser) Run() {
 	// Atualiza score (noop por enquanto)
 	if err := j.scoreUpdater.UpdateAfterRound(round.ID); err != nil {
 		slog.Error("ParticipationWindowCloser: error updating score", "err", err)
+	}
+
+	if err := j.badgeChecker.CheckAfterRound(round.ID); err != nil {
+		slog.Error("ParticipationWindowCloser: error checking badges", "err", err)
 	}
 }
 
