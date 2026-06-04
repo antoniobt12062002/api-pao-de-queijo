@@ -94,7 +94,7 @@ func main() {
 		notifySvc = &domain.NoopNotificationService{}
 	}
 
-	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, notifySvc)
+	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, notifySvc, noopScore)
 	roundHandler := handler.NewRoundHandler(roundUC)
 
 	deviceTokenUC      := usecase.NewDeviceTokenUseCase(deviceTokenRepo)

@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/antoniobt12062002/pao-de-queijo/internal/domain"
@@ -10,17 +11,20 @@ type RoundUseCase struct {
 	roundRepo    domain.RoundRepository
 	rotationRepo domain.RotationRepository
 	notifySvc    domain.NotificationService
+	scoreUpdater domain.ScoreUpdater
 }
 
 func NewRoundUseCase(
 	roundRepo domain.RoundRepository,
 	rotationRepo domain.RotationRepository,
 	notifySvc domain.NotificationService,
+	scoreUpdater domain.ScoreUpdater,
 ) *RoundUseCase {
 	return &RoundUseCase{
 		roundRepo:    roundRepo,
 		rotationRepo: rotationRepo,
 		notifySvc:    notifySvc,
+		scoreUpdater: scoreUpdater,
 	}
 }
 
@@ -133,5 +137,10 @@ func (uc *RoundUseCase) Cancel(roundID, callerID string) error {
 
 	// Notifica o novo pagador (noop por enquanto)
 	_ = uc.notifySvc.SendRoundAnnounced(round.PayerID, round.ID)
+
+	// Registra o skip no score do pagador original
+	if err := uc.scoreUpdater.UpdateOnCancel(roundID); err != nil {
+		slog.Error("RoundUseCase: error updating score on cancel", "err", err)
+	}
 	return nil
 }
