@@ -80,10 +80,10 @@ func (m *mockRotationRepoForRound) AdvancePosition() error {
 
 type mockNotifySvc struct{}
 
-func (n *mockNotifySvc) SendRoundAnnounced(payerID string) error    { return nil }
-func (n *mockNotifySvc) SendRoundClosed(payerID string) error       { return nil }
-func (n *mockNotifySvc) SendReminder(ids []string) error             { return nil }
-func (n *mockNotifySvc) SendParticipationOpen(ids []string) error { return nil }
+func (n *mockNotifySvc) SendRoundAnnounced(payerID, roundID string) error            { return nil }
+func (n *mockNotifySvc) SendParticipationOpen(userIDs []string, roundID string) error { return nil }
+func (n *mockNotifySvc) SendRoundClosed(payerID, roundID string) error               { return nil }
+func (n *mockNotifySvc) SendReminder(participantIDs []string, roundID string) error  { return nil }
 
 // --- tests ---
 

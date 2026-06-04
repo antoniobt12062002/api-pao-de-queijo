@@ -51,6 +51,9 @@ func (app *application) mount() http.Handler {
 			r.Post("/rounds/{id}/participate", app.participationHandler.Participate)
 			r.Delete("/rounds/{id}/participate", app.participationHandler.Withdraw)
 			r.Get("/rounds/{id}/participations", app.participationHandler.GetParticipations)
+
+			r.Post("/devices", app.deviceHandler.Register)
+			r.Delete("/devices/{token}", app.deviceHandler.Remove)
 		})
 	})
 
@@ -82,6 +85,7 @@ type application struct {
 	rotationHandler      *handler.RotationHandler
 	roundHandler         *handler.RoundHandler
 	participationHandler *handler.ParticipationHandler
+	deviceHandler        *handler.DeviceTokenHandler
 }
 
 type config struct {

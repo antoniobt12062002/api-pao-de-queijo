@@ -52,7 +52,7 @@ func (j *ParticipationWindowCloser) Run() {
 	slog.Info("ParticipationWindowCloser: round closed", "id", round.ID)
 
 	// Notifica o pagador (noop por enquanto)
-	if err := j.notifySvc.SendRoundClosed(round.PayerID); err != nil {
+	if err := j.notifySvc.SendRoundClosed(round.PayerID, round.ID); err != nil {
 		slog.Error("ParticipationWindowCloser: error sending notification", "err", err)
 	}
 
@@ -65,21 +65,23 @@ func (j *ParticipationWindowCloser) Run() {
 // ReminderSender envia lembretes aos participantes antes do fechamento.
 type ReminderSender struct {
 	roundRepo domain.RoundRepository
+	partRepo  domain.ParticipationRepository
 	notifySvc domain.NotificationService
 }
 
 func NewReminderSender(
 	roundRepo domain.RoundRepository,
+	partRepo domain.ParticipationRepository,
 	notifySvc domain.NotificationService,
 ) *ReminderSender {
 	return &ReminderSender{
 		roundRepo: roundRepo,
+		partRepo:  partRepo,
 		notifySvc: notifySvc,
 	}
 }
 
 // Run envia lembrete se a rodada estiver aberta e tiver ao menos 1 participante.
-// Como feature/participation ainda não foi implementada, este job é um stub.
 func (j *ReminderSender) Run() {
 	today := time.Now().Format("2006-01-02")
 	round, err := j.roundRepo.GetByDate(today)
@@ -91,6 +93,23 @@ func (j *ReminderSender) Run() {
 		slog.Info("ReminderSender: round not open, skipping reminder")
 		return
 	}
-	// TODO: buscar participantes quando feature/participation for implementada
-	slog.Info("ReminderSender: participation data not available yet, skipping reminder", "round_id", round.ID)
+
+	parts, err := j.partRepo.GetByRound(round.ID)
+	if err != nil {
+		slog.Error("ReminderSender: error fetching participations", "err", err)
+		return
+	}
+	if len(parts) == 0 {
+		slog.Info("ReminderSender: no participants yet, skipping reminder", "round_id", round.ID)
+		return
+	}
+
+	userIDs := make([]string, len(parts))
+	for i, p := range parts {
+		userIDs[i] = p.UserID
+	}
+
+	if err := j.notifySvc.SendReminder(userIDs, round.ID); err != nil {
+		slog.Error("ReminderSender: error sending reminder", "err", err)
+	}
 }
