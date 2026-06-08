@@ -33,8 +33,8 @@ func (r *DeviceTokenRepository) Upsert(dt *domain.DeviceToken) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// Remove tokens anteriores do mesmo usuário e plataforma (exceto o novo token)
 		if err := tx.Exec(
-			`DELETE FROM device_tokens WHERE user_id = ? AND platform = ? AND token != ?`,
-			dt.UserID, string(dt.Platform), dt.Token,
+			`DELETE FROM device_tokens WHERE user_id = ? AND token != ?`,
+			dt.UserID, dt.Token,
 		).Error; err != nil {
 			return err
 		}
