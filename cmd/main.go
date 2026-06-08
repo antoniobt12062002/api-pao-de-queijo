@@ -113,6 +113,8 @@ func main() {
 	reminder := job.NewReminderSender(roundRepo, participationRepo, notifySvc)
 	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, notifySvc, closer, reminder)
 
+	adminHandler := handler.NewAdminHandler(creator)
+
 	// Scheduler: lê notify_at da config para montar expressão cron
 	notifyAt := "08:00"
 	if configs, err := configRepo.GetAll(); err == nil {
@@ -158,6 +160,7 @@ func main() {
 		participationHandler: participationHandler,
 		deviceHandler:        deviceTokenHandler,
 		scoreHandler:         scoreHandler,
+		adminHandler:         adminHandler,
 	}
 
 	if err := api.run(api.mount()); err != nil {

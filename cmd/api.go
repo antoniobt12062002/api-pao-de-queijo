@@ -66,6 +66,8 @@ func (app *application) mount() http.Handler {
 			r.Get("/scores", app.scoreHandler.GetRanking)
 			r.Get("/scores/{user_id}", app.scoreHandler.GetUserScore)
 			r.Get("/badges/{user_id}", app.scoreHandler.GetUserBadges)
+
+			r.With(handler.AdminOnly).Post("/admin/trigger-round", app.adminHandler.TriggerRound)
 		})
 	})
 
@@ -99,6 +101,7 @@ type application struct {
 	participationHandler *handler.ParticipationHandler
 	deviceHandler        *handler.DeviceTokenHandler
 	scoreHandler         *handler.ScoreHandler
+	adminHandler         *handler.AdminHandler
 }
 
 type config struct {
