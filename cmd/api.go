@@ -17,7 +17,7 @@ func (app *application) mount() http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:4173"},
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:4173", "https://glowing-syrniki-17cec4.netlify.app"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: false,
