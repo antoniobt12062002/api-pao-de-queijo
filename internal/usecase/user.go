@@ -24,6 +24,10 @@ func NewUserUseCase(repo domain.UserRepository, jwtSecret string) *UserUseCase {
 	return &UserUseCase{repo: repo, jwtSecret: jwtSecret}
 }
 
+func (uc *UserUseCase) ListUsers() ([]*domain.User, error) {
+	return uc.repo.FindAll()
+}
+
 func (uc *UserUseCase) CreateUser(input domain.CreateUserInput) (*domain.User, error) {
 	existing, err := uc.repo.FindByEmail(input.Email)
 	if err != nil {

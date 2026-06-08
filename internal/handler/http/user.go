@@ -25,6 +25,15 @@ type registerRequest struct {
 	Phone    *string `json:"phone"`
 }
 
+func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
+	users, err := h.uc.ListUsers()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	writeJSON(w, http.StatusOK, users)
+}
+
 // Register godoc
 // @Summary      Cadastrar usuário
 // @Description  Cria um novo usuário com email e senha

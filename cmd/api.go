@@ -44,6 +44,8 @@ func (app *application) mount() http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(handler.JWTMiddleware(app.config.jwtSecret))
 
+			r.Get("/users", app.userHandler.List)
+
 			r.Get("/config", app.configHandler.GetAll)
 			r.With(handler.AdminOnly).Put("/config", app.configHandler.Update)
 
