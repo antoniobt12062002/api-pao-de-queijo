@@ -138,8 +138,12 @@ func main() {
 	c.Start()
 	slog.Info("cron scheduler started", "DailyRoundCreator", cronExpr)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	cfg := &config{
-		addr:      ":8080",
+		addr:      ":" + port,
 		db:        dbConfig{dsn: dsn},
 		jwtSecret: os.Getenv("JWT_SECRET"),
 	}

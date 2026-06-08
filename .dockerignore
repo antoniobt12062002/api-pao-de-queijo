@@ -1,0 +1,5 @@
+.env
+.git
+*.exe
+cmd.exe
+docs/swagger
