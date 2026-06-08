@@ -76,8 +76,10 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 		return
 	}
 	if len(tokens) == 0 {
+		slog.Warn("FCMNotificationService: no tokens found for users", "type", notifType, "userIDs", userIDs)
 		return
 	}
+	slog.Info("FCMNotificationService: sending notification", "type", notifType, "tokenCount", len(tokens))
 
 	msg := &messaging.MulticastMessage{
 		Tokens: tokens,
@@ -92,6 +94,8 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 		slog.Error("FCMNotificationService: multicast error", "type", notifType, "err", err)
 		return
 	}
+
+	slog.Info("FCMNotificationService: multicast sent", "type", notifType, "successCount", br.SuccessCount, "failureCount", br.FailureCount)
 
 	for i, resp := range br.Responses {
 		if !resp.Success {
