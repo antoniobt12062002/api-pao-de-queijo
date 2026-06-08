@@ -30,12 +30,21 @@ func NewDeviceTokenRepository(db *gorm.DB) *DeviceTokenRepository {
 // Note: dt.ID is not back-filled because this uses a raw Exec (no model scan).
 // Callers do not need the generated ID after an upsert.
 func (r *DeviceTokenRepository) Upsert(dt *domain.DeviceToken) error {
-	return r.db.Exec(
-		`INSERT INTO device_tokens (id, user_id, token, platform, created_at)
-		 VALUES (gen_random_uuid(), ?, ?, ?, now())
-		 ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, platform = EXCLUDED.platform`,
-		dt.UserID, dt.Token, string(dt.Platform),
-	).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Remove tokens anteriores do mesmo usuário e plataforma (exceto o novo token)
+		if err := tx.Exec(
+			`DELETE FROM device_tokens WHERE user_id = ? AND platform = ? AND token != ?`,
+			dt.UserID, string(dt.Platform), dt.Token,
+		).Error; err != nil {
+			return err
+		}
+		return tx.Exec(
+			`INSERT INTO device_tokens (id, user_id, token, platform, created_at)
+			 VALUES (gen_random_uuid(), ?, ?, ?, now())
+			 ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id, platform = EXCLUDED.platform`,
+			dt.UserID, dt.Token, string(dt.Platform),
+		).Error
+	})
 }
 
 func (r *DeviceTokenRepository) GetByToken(token string) (*domain.DeviceToken, error) {
