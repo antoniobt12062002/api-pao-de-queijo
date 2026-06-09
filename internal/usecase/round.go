@@ -55,9 +55,11 @@ func (uc *RoundUseCase) GetAll(page, limit int) (*PaginatedRoundsResponse, error
 	}, nil
 }
 
-func (uc *RoundUseCase) GetToday(callerID string) (*TodayRoundResponse, error) {
-	today := time.Now().Format("2006-01-02")
-	round, err := uc.roundRepo.GetByDate(today)
+func (uc *RoundUseCase) GetToday(callerID, date string) (*TodayRoundResponse, error) {
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
+	}
+	round, err := uc.roundRepo.GetByDate(date)
 	if err != nil {
 		return nil, err
 	}

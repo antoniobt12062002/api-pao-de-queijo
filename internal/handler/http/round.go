@@ -58,7 +58,8 @@ func (h *RoundHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Router       /rounds/today [get]
 func (h *RoundHandler) GetToday(w http.ResponseWriter, r *http.Request) {
 	userID := UserIDFromContext(r.Context())
-	resp, err := h.uc.GetToday(userID)
+	date := r.URL.Query().Get("date") // optional: client's local date (YYYY-MM-DD)
+	resp, err := h.uc.GetToday(userID, date)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error")
 		return

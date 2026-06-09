@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/robfig/cron/v3"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/db"
@@ -30,6 +31,19 @@ func main() {
 	// Setup logger first so all subsequent slog calls are structured
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+
+	// Set server timezone so all time.Now() calls use Brazil time.
+	// Railway runs in UTC; override here so date comparisons are correct.
+	tzName := os.Getenv("TZ_LOCATION")
+	if tzName == "" {
+		tzName = "America/Sao_Paulo"
+	}
+	if loc, err := time.LoadLocation(tzName); err == nil {
+		time.Local = loc
+		slog.Info("timezone configured", "location", tzName)
+	} else {
+		slog.Warn("could not load timezone, defaulting to UTC", "err", err)
+	}
 
 	if err := godotenv.Load(); err != nil {
 		slog.Warn("no .env file found, using environment variables")
@@ -132,7 +146,7 @@ func main() {
 	}
 	cronExpr := "0 " + minute + " " + hour + " * * *"
 
-	c := cron.New(cron.WithSeconds())
+	c := cron.New(cron.WithSeconds(), cron.WithLocation(time.Local))
 	if _, err := c.AddFunc(cronExpr, creator.Run); err != nil {
 		slog.Error("failed to schedule DailyRoundCreator", "err", err)
 		os.Exit(1)

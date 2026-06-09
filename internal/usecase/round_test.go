@@ -108,7 +108,7 @@ func TestRoundUseCase_GetAll_Empty(t *testing.T) {
 
 func TestRoundUseCase_GetToday_NoRound(t *testing.T) {
 	uc := usecase.NewRoundUseCase(newMockRoundRepo(), newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
-	resp, err := uc.GetToday("user-1")
+	resp, err := uc.GetToday("user-1", "")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestRoundUseCase_GetToday_IsPayer(t *testing.T) {
 	repo.byDate[today] = round
 
 	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
-	resp, err := uc.GetToday("user-1")
+	resp, err := uc.GetToday("user-1", "")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestRoundUseCase_GetToday_IsNotPayer(t *testing.T) {
 	repo.byDate[today] = round
 
 	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
-	resp, err := uc.GetToday("user-2")
+	resp, err := uc.GetToday("user-2", "")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
