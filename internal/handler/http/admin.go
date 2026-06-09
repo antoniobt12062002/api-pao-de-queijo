@@ -32,14 +32,15 @@ func (h *AdminHandler) TriggerRound(w http.ResponseWriter, r *http.Request) {
 
 func (h *AdminHandler) CreateRound(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Date    string `json:"date"`
-		PayerID string `json:"payer_id"`
+		Date     string `json:"date"`
+		PayerID  string `json:"payer_id"`
+		NotifyAt string `json:"notify_at"` // optional "YYYY-MM-DDTHH:MM"
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Date == "" {
 		writeError(w, http.StatusUnprocessableEntity, "date is required (YYYY-MM-DD)")
 		return
 	}
-	if err := h.creator.CreateForDate(req.Date, req.PayerID); err != nil {
+	if err := h.creator.CreateForDate(req.Date, req.PayerID, req.NotifyAt); err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRoundAlreadyExists):
 			writeError(w, http.StatusConflict, err.Error())

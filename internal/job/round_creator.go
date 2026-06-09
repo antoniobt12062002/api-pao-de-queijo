@@ -36,9 +36,10 @@ func NewDailyRoundCreator(
 	}
 }
 
-// CreateForDate cria uma rodada para uma data específica (uso admin). payerID opcional;
-// se vazio, usa o pagador atual da rotação.
-func (j *DailyRoundCreator) CreateForDate(date, payerID string) error {
+// CreateForDate cria uma rodada para uma data específica (uso admin). payerID e notifyAt
+// são opcionais; se vazios, usa o pagador atual da rotação e o horário configurado.
+// notifyAt aceita "YYYY-MM-DDTHH:MM" (datetime-local do frontend).
+func (j *DailyRoundCreator) CreateForDate(date, payerID, notifyAt string) error {
 	existing, err := j.roundRepo.GetByDate(date)
 	if err != nil {
 		return err
@@ -70,20 +71,28 @@ func (j *DailyRoundCreator) CreateForDate(date, payerID string) error {
 		payerID = rotation.CurrentPayerID()
 	}
 
-	// Calcula notifyAt combinando a data escolhida com o horário configurado.
-	// Se o horário já passou (ou é data passada), usa time.Now() para que a
-	// rodada fique disponível imediatamente.
-	notifyAt := resolveNotifyAt(date, configMap["notify_at"])
-	if notifyAt.Before(time.Now()) {
-		notifyAt = time.Now()
+	// Se o frontend enviou um datetime-local ("YYYY-MM-DDTHH:MM"), usa diretamente;
+	// caso contrário, combina a data com o horário configurado.
+	var resolvedNotifyAt time.Time
+	if notifyAt != "" {
+		loc := time.Now().Location()
+		if t, err2 := time.ParseInLocation("2006-01-02T15:04", notifyAt, loc); err2 == nil {
+			resolvedNotifyAt = t
+		}
 	}
-	closesAt := notifyAt.Add(time.Duration(windowMinutes) * time.Minute)
+	if resolvedNotifyAt.IsZero() {
+		resolvedNotifyAt = resolveNotifyAt(date, configMap["notify_at"])
+	}
+	if resolvedNotifyAt.Before(time.Now()) {
+		resolvedNotifyAt = time.Now()
+	}
+	closesAt := resolvedNotifyAt.Add(time.Duration(windowMinutes) * time.Minute)
 
 	round := &domain.Round{
 		Date:     date,
 		PayerID:  payerID,
 		Status:   domain.RoundStatusPending,
-		NotifyAt: notifyAt,
+		NotifyAt: resolvedNotifyAt,
 		ClosesAt: closesAt,
 	}
 	if err := j.roundRepo.Create(round); err != nil {
