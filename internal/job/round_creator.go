@@ -70,13 +70,21 @@ func (j *DailyRoundCreator) CreateForDate(date, payerID string) error {
 		payerID = rotation.CurrentPayerID()
 	}
 
-	now := time.Now()
+	// Calcula notifyAt combinando a data escolhida com o horário configurado.
+	// Se o horário já passou (ou é data passada), usa time.Now() para que a
+	// rodada fique disponível imediatamente.
+	notifyAt := resolveNotifyAt(date, configMap["notify_at"])
+	if notifyAt.Before(time.Now()) {
+		notifyAt = time.Now()
+	}
+	closesAt := notifyAt.Add(time.Duration(windowMinutes) * time.Minute)
+
 	round := &domain.Round{
 		Date:     date,
 		PayerID:  payerID,
 		Status:   domain.RoundStatusPending,
-		NotifyAt: now,
-		ClosesAt: now.Add(time.Duration(windowMinutes) * time.Minute),
+		NotifyAt: notifyAt,
+		ClosesAt: closesAt,
 	}
 	if err := j.roundRepo.Create(round); err != nil {
 		return err
@@ -165,4 +173,21 @@ func (j *DailyRoundCreator) Run() {
 	if err := j.notifySvc.SendRoundAnnounced(payerID, round.ID); err != nil {
 		slog.Error("DailyRoundCreator: error sending notification", "err", err)
 	}
+}
+
+// resolveNotifyAt combina a data (YYYY-MM-DD) com o horário de notificação
+// configurado (HH:MM) para produzir um timestamp no fuso local.
+func resolveNotifyAt(date, notifyAtCfg string) time.Time {
+	hour, minute := 8, 0
+	if len(notifyAtCfg) == 5 {
+		h, _ := strconv.Atoi(notifyAtCfg[:2])
+		m, _ := strconv.Atoi(notifyAtCfg[3:])
+		hour, minute = h, m
+	}
+	loc := time.Now().Location()
+	t, err := time.ParseInLocation("2006-01-02", date, loc)
+	if err != nil {
+		return time.Now()
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), hour, minute, 0, 0, loc)
 }
