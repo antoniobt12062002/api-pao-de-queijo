@@ -33,6 +33,7 @@ func (s *stubScoreUC) GetUserScore(userID string) (*usecase.ScoreResponse, error
 func (s *stubScoreUC) GetUserBadges(userID string) ([]*domain.Badge, error) {
 	return s.badges, s.badgesErr
 }
+func (s *stubScoreUC) GetJusticeChart() ([]*usecase.JusticeEntry, error) { return nil, nil }
 
 // --- tests ---
 

@@ -67,6 +67,7 @@ func (app *application) mount() http.Handler {
 			r.Delete("/devices/{token}", app.deviceHandler.Remove)
 
 			r.Get("/scores", app.scoreHandler.GetRanking)
+			r.Get("/scores/justice", app.scoreHandler.GetJusticeChart)
 			r.Get("/scores/{user_id}", app.scoreHandler.GetUserScore)
 			r.Get("/badges/{user_id}", app.scoreHandler.GetUserBadges)
 

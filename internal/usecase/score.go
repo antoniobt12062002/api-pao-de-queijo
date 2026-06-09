@@ -74,6 +74,64 @@ func (uc *ScoreUseCase) GetUserScore(userID string) (*ScoreResponse, error) {
 	return &ScoreResponse{Score: s, UserName: user.Name, UserEmail: user.Email}, nil
 }
 
+// JusticeEntry holds fairness metrics for one user.
+type JusticeEntry struct {
+	UserID           string  `json:"user_id"`
+	UserName         string  `json:"user_name"`
+	TimesPaid        int     `json:"times_paid"`
+	TimesParticipated int    `json:"times_participated"`
+	ExpectedPays     float64 `json:"expected_pays"`
+	Balance          float64 `json:"balance"`
+	FairnessRatio    float64 `json:"fairness_ratio"`
+}
+
+// GetJusticeChart returns per-user fairness metrics based on participation
+// proportionality: expected_pays = (user_participations / total_participations) * total_paid_rounds.
+func (uc *ScoreUseCase) GetJusticeChart() ([]*JusticeEntry, error) {
+	scores, err := uc.scoreRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var totalPaid, totalParticipated int
+	for _, s := range scores {
+		totalPaid += s.TimesPaid
+		totalParticipated += s.TimesParticipated
+	}
+
+	out := make([]*JusticeEntry, 0, len(scores))
+	for _, s := range scores {
+		user, err := uc.userRepo.FindByID(s.UserID)
+		if err != nil || user == nil {
+			continue
+		}
+
+		var expected, ratio float64
+		if totalParticipated > 0 {
+			expected = float64(s.TimesParticipated) / float64(totalParticipated) * float64(totalPaid)
+		}
+		if expected > 0 {
+			ratio = float64(s.TimesPaid) / expected
+		}
+
+		out = append(out, &JusticeEntry{
+			UserID:            s.UserID,
+			UserName:          user.Name,
+			TimesPaid:         s.TimesPaid,
+			TimesParticipated: s.TimesParticipated,
+			ExpectedPays:      expected,
+			Balance:           float64(s.TimesPaid) - expected,
+			FairnessRatio:     ratio,
+		})
+	}
+
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Balance > out[j].Balance
+	})
+
+	return out, nil
+}
+
 func (uc *ScoreUseCase) GetUserBadges(userID string) ([]*domain.Badge, error) {
 	user, err := uc.userRepo.FindByID(userID)
 	if err != nil {

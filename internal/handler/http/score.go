@@ -13,6 +13,7 @@ type ScoreUseCaseInterface interface {
 	GetRanking() ([]*usecase.ScoreResponse, error)
 	GetUserScore(userID string) (*usecase.ScoreResponse, error)
 	GetUserBadges(userID string) ([]*domain.Badge, error)
+	GetJusticeChart() ([]*usecase.JusticeEntry, error)
 }
 
 type ScoreHandler struct {
@@ -77,6 +78,15 @@ func (h *ScoreHandler) GetUserScore(w http.ResponseWriter, r *http.Request) {
 // @Failure      401  {object}  ErrInvalidCredentials
 // @Failure      404  {object}  ErrValidation
 // @Router       /badges/{user_id} [get]
+func (h *ScoreHandler) GetJusticeChart(w http.ResponseWriter, r *http.Request) {
+	entries, err := h.uc.GetJusticeChart()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	writeJSON(w, http.StatusOK, entries)
+}
+
 func (h *ScoreHandler) GetUserBadges(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "user_id")
 	badges, err := h.uc.GetUserBadges(userID)
