@@ -36,6 +36,57 @@ func NewDailyRoundCreator(
 	}
 }
 
+// CreateForDate cria uma rodada para uma data específica (uso admin). payerID opcional;
+// se vazio, usa o pagador atual da rotação.
+func (j *DailyRoundCreator) CreateForDate(date, payerID string) error {
+	existing, err := j.roundRepo.GetByDate(date)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return domain.ErrRoundAlreadyExists
+	}
+
+	configs, err := j.configRepo.GetAll()
+	if err != nil {
+		return err
+	}
+	configMap := make(map[string]string)
+	for _, c := range configs {
+		configMap[c.Key] = c.Value
+	}
+	windowMinutes := 30
+	if v, ok := configMap["round_window_minutes"]; ok {
+		if n, err2 := strconv.Atoi(v); err2 == nil {
+			windowMinutes = n
+		}
+	}
+
+	if payerID == "" {
+		rotation, err := j.rotationRepo.Get()
+		if err != nil || rotation == nil || len(rotation.Members) == 0 {
+			return domain.ErrRotationEmpty
+		}
+		payerID = rotation.CurrentPayerID()
+	}
+
+	now := time.Now()
+	round := &domain.Round{
+		Date:     date,
+		PayerID:  payerID,
+		Status:   domain.RoundStatusPending,
+		NotifyAt: now,
+		ClosesAt: now.Add(time.Duration(windowMinutes) * time.Minute),
+	}
+	if err := j.roundRepo.Create(round); err != nil {
+		return err
+	}
+
+	slog.Info("DailyRoundCreator: round created for specific date by admin", "date", date, "id", round.ID)
+	_ = j.notifySvc.SendRoundAnnounced(payerID, round.ID)
+	return nil
+}
+
 // Run executa o job de criação diária de rodada. É idempotente.
 func (j *DailyRoundCreator) Run() {
 	today := time.Now().Format("2006-01-02")

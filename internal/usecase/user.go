@@ -13,6 +13,7 @@ var (
 	ErrEmailAlreadyExists       = errors.New("email already registered")
 	ErrEmailTakenByLocalAccount = errors.New("email already registered with password login")
 	ErrInvalidCredentials       = errors.New("invalid email or password")
+	ErrUserInactive             = errors.New("account is deactivated")
 )
 
 type UserUseCase struct {
@@ -26,6 +27,17 @@ func NewUserUseCase(repo domain.UserRepository, jwtSecret string) *UserUseCase {
 
 func (uc *UserUseCase) ListUsers() ([]*domain.User, error) {
 	return uc.repo.FindAll()
+}
+
+func (uc *UserUseCase) UpdateRole(id, role string) error {
+	if role != "admin" && role != "dev" {
+		return errors.New("invalid role: must be admin or dev")
+	}
+	return uc.repo.UpdateRole(id, role)
+}
+
+func (uc *UserUseCase) DeactivateUser(id string) error {
+	return uc.repo.Deactivate(id)
 }
 
 func (uc *UserUseCase) CreateUser(input domain.CreateUserInput) (*domain.User, error) {
@@ -74,6 +86,9 @@ func (uc *UserUseCase) Login(email, password string) (string, error) {
 	if user == nil || user.PasswordHash == nil {
 		return "", ErrInvalidCredentials
 	}
+	if !user.Active {
+		return "", ErrUserInactive
+	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(password)); err != nil {
 		return "", ErrInvalidCredentials
@@ -90,6 +105,9 @@ func (uc *UserUseCase) OAuthLogin(input domain.OAuthUserInput) (string, error) {
 	}
 	if existing != nil && existing.Provider == "local" {
 		return "", ErrEmailTakenByLocalAccount
+	}
+	if existing != nil && !existing.Active {
+		return "", ErrUserInactive
 	}
 
 	// Check if OAuth user already exists

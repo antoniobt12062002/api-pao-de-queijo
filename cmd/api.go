@@ -45,6 +45,7 @@ func (app *application) mount() http.Handler {
 			r.Use(handler.JWTMiddleware(app.config.jwtSecret))
 
 			r.Get("/users", app.userHandler.List)
+			r.With(handler.AdminOnly).Put("/users/{id}/role", app.userHandler.UpdateRole)
 
 			r.Get("/config", app.configHandler.GetAll)
 			r.With(handler.AdminOnly).Put("/config", app.configHandler.Update)
@@ -70,6 +71,10 @@ func (app *application) mount() http.Handler {
 			r.Get("/badges/{user_id}", app.scoreHandler.GetUserBadges)
 
 			r.With(handler.AdminOnly).Post("/admin/trigger-round", app.adminHandler.TriggerRound)
+			r.With(handler.AdminOnly).Post("/admin/rounds", app.adminHandler.CreateRound)
+			r.With(handler.AdminOnly).Post("/admin/rounds/{id}/force-close", app.adminHandler.ForceCloseRound)
+			r.With(handler.AdminOnly).Put("/admin/rounds/{id}/payer", app.adminHandler.ChangePayer)
+			r.With(handler.AdminOnly).Put("/users/{id}/deactivate", app.userHandler.Deactivate)
 		})
 	})
 

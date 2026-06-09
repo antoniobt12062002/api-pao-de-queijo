@@ -69,6 +69,31 @@ func (j *ParticipationWindowCloser) Run() {
 	}
 }
 
+// CloseRoundByID fecha uma rodada específica pelo ID (uso admin).
+func (j *ParticipationWindowCloser) CloseRoundByID(roundID string) error {
+	round, err := j.roundRepo.GetByID(roundID)
+	if err != nil {
+		return err
+	}
+	if round == nil {
+		return domain.ErrRoundNotFound
+	}
+	if round.Status != domain.RoundStatusOpen {
+		return domain.ErrRoundNotOpen
+	}
+
+	round.Status = domain.RoundStatusClosed
+	if err := j.roundRepo.Update(round); err != nil {
+		return err
+	}
+
+	slog.Info("ParticipationWindowCloser: round force-closed by admin", "id", round.ID)
+	_ = j.notifySvc.SendRoundClosed(round.PayerID, round.ID)
+	_ = j.scoreUpdater.UpdateAfterRound(round.ID)
+	_ = j.badgeChecker.CheckAfterRound(round.ID)
+	return nil
+}
+
 // ReminderSender envia lembretes aos participantes antes do fechamento.
 type ReminderSender struct {
 	roundRepo domain.RoundRepository

@@ -57,6 +57,9 @@ func (m *mockRepo) FindAll() ([]*domain.User, error) {
 	return users, nil
 }
 
+func (m *mockRepo) UpdateRole(id, role string) error { return nil }
+func (m *mockRepo) Deactivate(id string) error       { return nil }
+
 func TestCreateUser(t *testing.T) {
 	repo := newMockRepo()
 	uc := usecase.NewUserUseCase(repo, "test-jwt-secret")

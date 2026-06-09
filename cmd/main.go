@@ -74,7 +74,7 @@ func main() {
 	roundRepo := postgres.NewRoundRepository(gormDB)
 
 	participationRepo    := postgres.NewParticipationRepository(gormDB)
-	participationUC      := usecase.NewParticipationUseCase(participationRepo, roundRepo)
+	participationUC      := usecase.NewParticipationUseCase(participationRepo, roundRepo, userRepo)
 	participationHandler := handler.NewParticipationHandler(participationUC)
 
 	deviceTokenRepo := postgres.NewDeviceTokenRepository(gormDB)
@@ -113,7 +113,7 @@ func main() {
 	reminder := job.NewReminderSender(roundRepo, participationRepo, notifySvc)
 	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, notifySvc, closer, reminder)
 
-	adminHandler := handler.NewAdminHandler(creator)
+	adminHandler := handler.NewAdminHandler(creator, closer, roundUC)
 
 	// Scheduler: lê notify_at da config para montar expressão cron
 	notifyAt := "08:00"

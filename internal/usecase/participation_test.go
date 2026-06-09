@@ -10,6 +10,16 @@ import (
 
 // --- mocks ---
 
+type mockUserRepo struct{}
+
+func (m *mockUserRepo) Create(u *domain.User) error                                    { return nil }
+func (m *mockUserRepo) FindByEmail(email string) (*domain.User, error)                  { return nil, nil }
+func (m *mockUserRepo) FindByProviderID(p, id string) (*domain.User, error)             { return nil, nil }
+func (m *mockUserRepo) FindByID(id string) (*domain.User, error)                        { return nil, nil }
+func (m *mockUserRepo) FindAll() ([]*domain.User, error)  { return nil, nil }
+func (m *mockUserRepo) UpdateRole(id, role string) error  { return nil }
+func (m *mockUserRepo) Deactivate(id string) error        { return nil }
+
 type mockParticipationRepo struct {
 	byRoundUser map[string]*domain.Participation // key: roundID+":"+userID
 	byRound     map[string][]*domain.Participation
@@ -74,14 +84,14 @@ func TestParticipationUseCase_Participate_OK(t *testing.T) {
 	round := openRound("round-1")
 	roundRepo.rounds["round-1"] = round
 
-	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), roundRepo)
+	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), roundRepo, &mockUserRepo{})
 	if err := uc.Participate("round-1", "user-1", 2); err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
 }
 
 func TestParticipationUseCase_Participate_RoundNotFound(t *testing.T) {
-	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), newMockRoundRepo())
+	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), newMockRoundRepo(), &mockUserRepo{})
 	err := uc.Participate("nonexistent", "user-1", 1)
 	if err != domain.ErrRoundNotFound {
 		t.Errorf("expected ErrRoundNotFound, got: %v", err)
@@ -92,7 +102,7 @@ func TestParticipationUseCase_Participate_RoundNotOpen(t *testing.T) {
 	roundRepo := newMockRoundRepo()
 	roundRepo.rounds["round-1"] = pendingRound("round-1")
 
-	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), roundRepo)
+	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), roundRepo, &mockUserRepo{})
 	err := uc.Participate("round-1", "user-1", 1)
 	if err != domain.ErrRoundNotOpen {
 		t.Errorf("expected ErrRoundNotOpen, got: %v", err)
@@ -104,7 +114,7 @@ func TestParticipationUseCase_Participate_AlreadyParticipating(t *testing.T) {
 	roundRepo.rounds["round-1"] = openRound("round-1")
 	partRepo := newMockParticipationRepo()
 
-	uc := usecase.NewParticipationUseCase(partRepo, roundRepo)
+	uc := usecase.NewParticipationUseCase(partRepo, roundRepo, &mockUserRepo{})
 	_ = uc.Participate("round-1", "user-1", 1)
 	err := uc.Participate("round-1", "user-1", 1)
 	if err != domain.ErrAlreadyParticipating {
@@ -117,7 +127,7 @@ func TestParticipationUseCase_Withdraw_OK(t *testing.T) {
 	roundRepo.rounds["round-1"] = openRound("round-1")
 	partRepo := newMockParticipationRepo()
 
-	uc := usecase.NewParticipationUseCase(partRepo, roundRepo)
+	uc := usecase.NewParticipationUseCase(partRepo, roundRepo, &mockUserRepo{})
 	_ = uc.Participate("round-1", "user-1", 1)
 	if err := uc.Withdraw("round-1", "user-1"); err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -128,7 +138,7 @@ func TestParticipationUseCase_Withdraw_RoundNotOpen(t *testing.T) {
 	roundRepo := newMockRoundRepo()
 	roundRepo.rounds["round-1"] = pendingRound("round-1")
 
-	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), roundRepo)
+	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), roundRepo, &mockUserRepo{})
 	err := uc.Withdraw("round-1", "user-1")
 	if err != domain.ErrRoundNotOpen {
 		t.Errorf("expected ErrRoundNotOpen, got: %v", err)
@@ -139,7 +149,7 @@ func TestParticipationUseCase_Withdraw_NotFound(t *testing.T) {
 	roundRepo := newMockRoundRepo()
 	roundRepo.rounds["round-1"] = openRound("round-1")
 
-	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), roundRepo)
+	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), roundRepo, &mockUserRepo{})
 	err := uc.Withdraw("round-1", "user-1")
 	if err != domain.ErrParticipationNotFound {
 		t.Errorf("expected ErrParticipationNotFound, got: %v", err)
@@ -147,13 +157,13 @@ func TestParticipationUseCase_Withdraw_NotFound(t *testing.T) {
 }
 
 func TestParticipationUseCase_GetParticipations_Empty(t *testing.T) {
-	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), newMockRoundRepo())
+	uc := usecase.NewParticipationUseCase(newMockParticipationRepo(), newMockRoundRepo(), &mockUserRepo{})
 	resp, err := uc.GetParticipations("round-1")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	if len(resp.Data) != 0 {
-		t.Errorf("expected empty data, got %d", len(resp.Data))
+	if len(resp.Participations) != 0 {
+		t.Errorf("expected empty data, got %d", len(resp.Participations))
 	}
 	if resp.TotalQuantity != 0 {
 		t.Errorf("expected total_quantity 0, got %d", resp.TotalQuantity)
@@ -165,7 +175,7 @@ func TestParticipationUseCase_GetParticipations_WithData(t *testing.T) {
 	roundRepo.rounds["round-1"] = openRound("round-1")
 	partRepo := newMockParticipationRepo()
 
-	uc := usecase.NewParticipationUseCase(partRepo, roundRepo)
+	uc := usecase.NewParticipationUseCase(partRepo, roundRepo, &mockUserRepo{})
 	_ = uc.Participate("round-1", "user-1", 3)
 	_ = uc.Participate("round-1", "user-2", 2)
 
@@ -173,8 +183,8 @@ func TestParticipationUseCase_GetParticipations_WithData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	if len(resp.Data) != 2 {
-		t.Errorf("expected 2 participations, got %d", len(resp.Data))
+	if len(resp.Participations) != 2 {
+		t.Errorf("expected 2 participations, got %d", len(resp.Participations))
 	}
 	if resp.TotalQuantity != 5 {
 		t.Errorf("expected total_quantity 5, got %d", resp.TotalQuantity)

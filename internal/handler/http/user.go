@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/domain"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/usecase"
 )
@@ -23,6 +24,31 @@ type registerRequest struct {
 	Password string  `json:"password"`
 	Role     string  `json:"role"`
 	Phone    *string `json:"phone"`
+}
+
+func (h *UserHandler) Deactivate(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := h.uc.DeactivateUser(id); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"message": "user deactivated"})
+}
+
+func (h *UserHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var req struct {
+		Role string `json:"role"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "invalid request body")
+		return
+	}
+	if err := h.uc.UpdateRole(id, req.Role); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"message": "role updated"})
 }
 
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +92,6 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: req.Password,
-		Role:     req.Role,
 		Phone:    req.Phone,
 	})
 	if err != nil {

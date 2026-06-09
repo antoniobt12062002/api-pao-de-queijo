@@ -59,6 +59,9 @@ func (m *mockUserRepoForRotation) Create(u *domain.User) error                  
 func (m *mockUserRepoForRotation) FindByEmail(email string) (*domain.User, error)           { return nil, nil }
 func (m *mockUserRepoForRotation) FindByProviderID(p, id string) (*domain.User, error)      { return nil, nil }
 func (m *mockUserRepoForRotation) FindByID(id string) (*domain.User, error)                 { return nil, nil }
+func (m *mockUserRepoForRotation) UpdateRole(id, role string) error  { return nil }
+func (m *mockUserRepoForRotation) Deactivate(id string) error        { return nil }
+
 func (m *mockUserRepoForRotation) FindAll() ([]*domain.User, error) {
 	return m.users, nil
 }

@@ -17,6 +17,7 @@ type userModel struct {
 	Phone        *string   `gorm:"column:phone"`
 	Provider     string    `gorm:"column:provider"`
 	ProviderID   *string   `gorm:"column:provider_id"`
+	Active       bool      `gorm:"column:active;default:true"`
 	CreatedAt    time.Time `gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt    time.Time `gorm:"column:updated_at;autoUpdateTime"`
 }
@@ -79,6 +80,14 @@ func (r *UserRepository) FindByID(id string) (*domain.User, error) {
 	return toDomain(&m), nil
 }
 
+func (r *UserRepository) UpdateRole(id, role string) error {
+	return r.db.Model(&userModel{}).Where("id = ?", id).Update("role", role).Error
+}
+
+func (r *UserRepository) Deactivate(id string) error {
+	return r.db.Model(&userModel{}).Where("id = ?", id).Update("active", false).Error
+}
+
 func (r *UserRepository) FindAll() ([]*domain.User, error) {
 	var models []userModel
 	if err := r.db.Find(&models).Error; err != nil {
@@ -101,6 +110,7 @@ func toModel(u *domain.User) *userModel {
 		Phone:        u.Phone,
 		Provider:     u.Provider,
 		ProviderID:   u.ProviderID,
+		Active:       u.Active,
 	}
 }
 
@@ -114,6 +124,7 @@ func toDomain(m *userModel) *domain.User {
 		Phone:        m.Phone,
 		Provider:     m.Provider,
 		ProviderID:   m.ProviderID,
+		Active:       m.Active,
 		CreatedAt:    m.CreatedAt,
 		UpdatedAt:    m.UpdatedAt,
 	}

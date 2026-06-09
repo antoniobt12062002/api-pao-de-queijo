@@ -43,6 +43,8 @@ func (m *mockUserRepoScore) FindByEmail(email string) (*domain.User, error)     
 func (m *mockUserRepoScore) FindByProviderID(p, id string) (*domain.User, error) { return nil, nil }
 func (m *mockUserRepoScore) FindByID(id string) (*domain.User, error)            { return m.byID[id], nil }
 func (m *mockUserRepoScore) FindAll() ([]*domain.User, error)                    { return nil, nil }
+func (m *mockUserRepoScore) UpdateRole(id, role string) error                    { return nil }
+func (m *mockUserRepoScore) Deactivate(id string) error                          { return nil }
 
 // --- tests ---
 

@@ -6,10 +6,11 @@ import (
 )
 
 var (
-	ErrRoundNotFound   = errors.New("round not found")
-	ErrRoundNotPending = errors.New("round is not in pending status")
-	ErrRoundNotPayer   = errors.New("only the current payer can perform this action")
-	ErrRotationEmpty   = errors.New("rotation has no members configured")
+	ErrRoundNotFound      = errors.New("round not found")
+	ErrRoundNotPending    = errors.New("round is not in pending status")
+	ErrRoundNotPayer      = errors.New("only the current payer can perform this action")
+	ErrRotationEmpty      = errors.New("rotation has no members configured")
+	ErrRoundAlreadyExists = errors.New("round already exists for this date")
 )
 
 type RoundStatus string

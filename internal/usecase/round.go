@@ -100,6 +100,21 @@ func (uc *RoundUseCase) Confirm(roundID, callerID string) error {
 	return nil
 }
 
+func (uc *RoundUseCase) ChangePayer(roundID, newPayerID string) error {
+	round, err := uc.roundRepo.GetByID(roundID)
+	if err != nil {
+		return err
+	}
+	if round == nil {
+		return domain.ErrRoundNotFound
+	}
+	if round.Status != domain.RoundStatusPending && round.Status != domain.RoundStatusOpen {
+		return domain.ErrRoundNotPending
+	}
+	round.PayerID = newPayerID
+	return uc.roundRepo.Update(round)
+}
+
 func (uc *RoundUseCase) Cancel(roundID, callerID string) error {
 	round, err := uc.roundRepo.GetByID(roundID)
 	if err != nil {

@@ -11,6 +11,7 @@ type User struct {
 	Phone        *string   `json:"phone"`
 	Provider     string    `json:"provider"`
 	ProviderID   *string   `json:"-"`
+	Active       bool      `json:"active"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
@@ -36,4 +37,6 @@ type UserRepository interface {
 	FindByProviderID(provider, providerID string) (*User, error)
 	FindByID(id string) (*User, error)
 	FindAll() ([]*User, error)
+	UpdateRole(id, role string) error
+	Deactivate(id string) error
 }

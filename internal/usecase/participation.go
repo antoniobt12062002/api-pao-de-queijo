@@ -5,18 +5,26 @@ import "github.com/antoniobt12062002/pao-de-queijo/internal/domain"
 type ParticipationUseCase struct {
 	partRepo  domain.ParticipationRepository
 	roundRepo domain.RoundRepository
+	userRepo  domain.UserRepository
 }
 
 func NewParticipationUseCase(
 	partRepo domain.ParticipationRepository,
 	roundRepo domain.RoundRepository,
+	userRepo domain.UserRepository,
 ) *ParticipationUseCase {
-	return &ParticipationUseCase{partRepo: partRepo, roundRepo: roundRepo}
+	return &ParticipationUseCase{partRepo: partRepo, roundRepo: roundRepo, userRepo: userRepo}
+}
+
+type ParticipationItem struct {
+	UserID   string `json:"user_id"`
+	Name     string `json:"name"`
+	Quantity int    `json:"quantity"`
 }
 
 type ParticipationsResponse struct {
-	Data          []*domain.Participation `json:"data"`
-	TotalQuantity int                     `json:"total_quantity"`
+	Participations []*ParticipationItem `json:"participations"`
+	TotalQuantity  int                  `json:"total_quantity"`
 }
 
 func (uc *ParticipationUseCase) Participate(roundID, userID string, quantity int) error {
@@ -63,12 +71,28 @@ func (uc *ParticipationUseCase) GetParticipations(roundID string) (*Participatio
 	if err != nil {
 		return nil, err
 	}
+
+	users, err := uc.userRepo.FindAll()
+	if err != nil {
+		return nil, err
+	}
+	nameMap := make(map[string]string, len(users))
+	for _, u := range users {
+		nameMap[u.ID] = u.Name
+	}
+
 	total := 0
-	for _, p := range parts {
+	items := make([]*ParticipationItem, len(parts))
+	for i, p := range parts {
 		total += p.Quantity
+		items[i] = &ParticipationItem{
+			UserID:   p.UserID,
+			Name:     nameMap[p.UserID],
+			Quantity: p.Quantity,
+		}
 	}
 	return &ParticipationsResponse{
-		Data:          parts,
-		TotalQuantity: total,
+		Participations: items,
+		TotalQuantity:  total,
 	}, nil
 }

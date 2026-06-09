@@ -64,7 +64,9 @@ func (s *stubUserRepoForRotation) Create(u *domain.User) error                  
 func (s *stubUserRepoForRotation) FindByEmail(email string) (*domain.User, error)          { return nil, nil }
 func (s *stubUserRepoForRotation) FindByProviderID(p, id string) (*domain.User, error)     { return nil, nil }
 func (s *stubUserRepoForRotation) FindByID(id string) (*domain.User, error)                { return nil, nil }
-func (s *stubUserRepoForRotation) FindAll() ([]*domain.User, error)                        { return s.users, nil }
+func (s *stubUserRepoForRotation) FindAll() ([]*domain.User, error)     { return s.users, nil }
+func (s *stubUserRepoForRotation) UpdateRole(id, role string) error     { return nil }
+func (s *stubUserRepoForRotation) Deactivate(id string) error           { return nil }
 
 // --- tests ---
 

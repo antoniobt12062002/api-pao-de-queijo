@@ -71,7 +71,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.uc.Login(req.Email, req.Password)
 	if err != nil {
-		if errors.Is(err, usecase.ErrInvalidCredentials) {
+		if errors.Is(err, usecase.ErrInvalidCredentials) || errors.Is(err, usecase.ErrUserInactive) {
 			writeError(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -155,6 +155,10 @@ func (h *AuthHandler) GitHubCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, usecase.ErrEmailTakenByLocalAccount) {
 			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
+		if errors.Is(err, usecase.ErrUserInactive) {
+			writeError(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "internal server error")
