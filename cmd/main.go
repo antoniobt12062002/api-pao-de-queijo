@@ -86,7 +86,10 @@ func main() {
 	rotationUC      := usecase.NewRotationUseCase(rotationRepo, userRepo)
 	rotationHandler := handler.NewRotationHandler(rotationUC)
 
-	roundRepo := postgres.NewRoundRepository(gormDB)
+	roundRepo    := postgres.NewRoundRepository(gormDB)
+	absenceRepo  := postgres.NewAbsenceRepository(gormDB)
+	absenceUC    := usecase.NewAbsenceUseCase(absenceRepo)
+	absenceHandler := handler.NewAbsenceHandler(absenceUC)
 
 	participationRepo    := postgres.NewParticipationRepository(gormDB)
 	participationUC      := usecase.NewParticipationUseCase(participationRepo, roundRepo, userRepo)
@@ -126,7 +129,7 @@ func main() {
 	// Background jobs
 	closer  := job.NewParticipationWindowCloser(roundRepo, notifySvc, scoreUpdater, badgeChecker)
 	reminder := job.NewReminderSender(roundRepo, participationRepo, notifySvc)
-	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, notifySvc, closer, reminder)
+	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, absenceRepo, notifySvc, closer, reminder)
 
 	adminHandler := handler.NewAdminHandler(creator, closer, roundUC)
 
@@ -176,6 +179,7 @@ func main() {
 		deviceHandler:        deviceTokenHandler,
 		scoreHandler:         scoreHandler,
 		adminHandler:         adminHandler,
+		absenceHandler:       absenceHandler,
 	}
 
 	if err := api.run(api.mount()); err != nil {

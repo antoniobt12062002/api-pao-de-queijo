@@ -102,6 +102,21 @@ func (uc *RoundUseCase) Confirm(roundID, callerID string) error {
 	return nil
 }
 
+func (uc *RoundUseCase) SetActualCost(roundID, callerID string, cost float64) error {
+	round, err := uc.roundRepo.GetByID(roundID)
+	if err != nil {
+		return err
+	}
+	if round == nil {
+		return domain.ErrRoundNotFound
+	}
+	if round.PayerID != callerID {
+		return domain.ErrRoundNotPayer
+	}
+	round.ActualCost = &cost
+	return uc.roundRepo.Update(round)
+}
+
 func (uc *RoundUseCase) ChangePayer(roundID, newPayerID string) error {
 	round, err := uc.roundRepo.GetByID(roundID)
 	if err != nil {

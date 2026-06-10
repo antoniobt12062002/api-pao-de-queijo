@@ -23,13 +23,14 @@ const (
 )
 
 type Round struct {
-	ID        string      `json:"id"`
-	Date      string      `json:"date"` // "YYYY-MM-DD"
-	PayerID   string      `json:"payer_id"`
-	Status    RoundStatus `json:"status"`
-	NotifyAt  time.Time   `json:"notify_at"`
-	ClosesAt  time.Time   `json:"closes_at"`
-	CreatedAt time.Time   `json:"created_at"`
+	ID         string      `json:"id"`
+	Date       string      `json:"date"` // "YYYY-MM-DD"
+	PayerID    string      `json:"payer_id"`
+	Status     RoundStatus `json:"status"`
+	NotifyAt   time.Time   `json:"notify_at"`
+	ClosesAt   time.Time   `json:"closes_at"`
+	CreatedAt  time.Time   `json:"created_at"`
+	ActualCost *float64    `json:"actual_cost,omitempty"`
 }
 
 type RoundRepository interface {

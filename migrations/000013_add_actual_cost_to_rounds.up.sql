@@ -1,0 +1,1 @@
+ALTER TABLE rounds ADD COLUMN IF NOT EXISTS actual_cost NUMERIC(10,2);

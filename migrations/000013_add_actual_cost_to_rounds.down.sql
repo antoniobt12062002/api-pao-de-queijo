@@ -1,0 +1,1 @@
+ALTER TABLE rounds DROP COLUMN IF EXISTS actual_cost;

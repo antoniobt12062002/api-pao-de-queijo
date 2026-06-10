@@ -58,6 +58,7 @@ func (app *application) mount() http.Handler {
 			r.Get("/rounds/today", app.roundHandler.GetToday)
 			r.Post("/rounds/{id}/confirm", app.roundHandler.Confirm)
 			r.Post("/rounds/{id}/cancel", app.roundHandler.Cancel)
+			r.Put("/rounds/{id}/cost", app.roundHandler.SetActualCost)
 
 			r.Post("/rounds/{id}/participate", app.participationHandler.Participate)
 			r.Delete("/rounds/{id}/participate", app.participationHandler.Withdraw)
@@ -65,6 +66,10 @@ func (app *application) mount() http.Handler {
 
 			r.Post("/devices", app.deviceHandler.Register)
 			r.Delete("/devices/{token}", app.deviceHandler.Remove)
+
+			r.Get("/absences", app.absenceHandler.ListAbsences)
+			r.Post("/absences", app.absenceHandler.MarkAbsent)
+			r.Delete("/absences/{date}", app.absenceHandler.RemoveAbsence)
 
 			r.Get("/scores", app.scoreHandler.GetRanking)
 			r.Get("/scores/justice", app.scoreHandler.GetJusticeChart)
@@ -110,6 +115,7 @@ type application struct {
 	deviceHandler        *handler.DeviceTokenHandler
 	scoreHandler         *handler.ScoreHandler
 	adminHandler         *handler.AdminHandler
+	absenceHandler       *handler.AbsenceHandler
 }
 
 type config struct {

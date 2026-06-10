@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -131,6 +132,30 @@ func (h *RoundHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"message": "round cancelled and reassigned"})
+}
+
+func (h *RoundHandler) SetActualCost(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	userID := UserIDFromContext(r.Context())
+	var req struct {
+		Cost float64 `json:"cost"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Cost <= 0 {
+		writeError(w, http.StatusUnprocessableEntity, "cost must be a positive number")
+		return
+	}
+	if err := h.uc.SetActualCost(id, userID, req.Cost); err != nil {
+		switch {
+		case errors.Is(err, domain.ErrRoundNotFound):
+			writeError(w, http.StatusNotFound, err.Error())
+		case errors.Is(err, domain.ErrRoundNotPayer):
+			writeError(w, http.StatusForbidden, err.Error())
+		default:
+			writeError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"message": "cost updated"})
 }
 
 func parseIntParam(s string, defaultVal int) int {

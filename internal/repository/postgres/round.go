@@ -9,13 +9,14 @@ import (
 )
 
 type roundModel struct {
-	ID        string    `gorm:"column:id;primaryKey;type:uuid;default:gen_random_uuid()"`
-	Date      string    `gorm:"column:date;type:date"`
-	PayerID   string    `gorm:"column:payer_id;type:uuid"`
-	Status    string    `gorm:"column:status"`
-	NotifyAt  time.Time `gorm:"column:notify_at"`
-	ClosesAt  time.Time `gorm:"column:closes_at"`
-	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`
+	ID         string   `gorm:"column:id;primaryKey;type:uuid;default:gen_random_uuid()"`
+	Date       string   `gorm:"column:date;type:date"`
+	PayerID    string   `gorm:"column:payer_id;type:uuid"`
+	Status     string   `gorm:"column:status"`
+	NotifyAt   time.Time `gorm:"column:notify_at"`
+	ClosesAt   time.Time `gorm:"column:closes_at"`
+	CreatedAt  time.Time `gorm:"column:created_at;autoCreateTime"`
+	ActualCost *float64  `gorm:"column:actual_cost"`
 }
 
 func (roundModel) TableName() string { return "rounds" }
@@ -88,24 +89,26 @@ func (r *RoundRepository) Update(round *domain.Round) error {
 
 func toRoundModel(r *domain.Round) *roundModel {
 	return &roundModel{
-		ID:       r.ID,
-		Date:     r.Date,
-		PayerID:  r.PayerID,
-		Status:   string(r.Status),
-		NotifyAt: r.NotifyAt,
-		ClosesAt: r.ClosesAt,
+		ID:         r.ID,
+		Date:       r.Date,
+		PayerID:    r.PayerID,
+		Status:     string(r.Status),
+		NotifyAt:   r.NotifyAt,
+		ClosesAt:   r.ClosesAt,
+		ActualCost: r.ActualCost,
 	}
 }
 
 func toDomainRound(m *roundModel) *domain.Round {
 	return &domain.Round{
-		ID:        m.ID,
-		Date:      m.Date,
-		PayerID:   m.PayerID,
-		Status:    domain.RoundStatus(m.Status),
-		NotifyAt:  m.NotifyAt,
-		ClosesAt:  m.ClosesAt,
-		CreatedAt: m.CreatedAt,
+		ID:         m.ID,
+		Date:       m.Date,
+		PayerID:    m.PayerID,
+		Status:     domain.RoundStatus(m.Status),
+		NotifyAt:   m.NotifyAt,
+		ClosesAt:   m.ClosesAt,
+		CreatedAt:  m.CreatedAt,
+		ActualCost: m.ActualCost,
 	}
 }
 

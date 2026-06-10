@@ -13,6 +13,7 @@ type DailyRoundCreator struct {
 	roundRepo    domain.RoundRepository
 	rotationRepo domain.RotationRepository
 	configRepo   domain.ConfigRepository
+	absenceRepo  domain.AbsenceRepository
 	notifySvc    domain.NotificationService
 	closer       *ParticipationWindowCloser
 	reminder     *ReminderSender
@@ -22,6 +23,7 @@ func NewDailyRoundCreator(
 	roundRepo domain.RoundRepository,
 	rotationRepo domain.RotationRepository,
 	configRepo domain.ConfigRepository,
+	absenceRepo domain.AbsenceRepository,
 	notifySvc domain.NotificationService,
 	closer *ParticipationWindowCloser,
 	reminder *ReminderSender,
@@ -30,10 +32,34 @@ func NewDailyRoundCreator(
 		roundRepo:    roundRepo,
 		rotationRepo: rotationRepo,
 		configRepo:   configRepo,
+		absenceRepo:  absenceRepo,
 		notifySvc:    notifySvc,
 		closer:       closer,
 		reminder:     reminder,
 	}
+}
+
+// resolvePayerSkippingAbsent returns the first non-absent member starting from
+// the current position in the rotation. Falls back to the current payer if all
+// members are absent (edge case).
+func (j *DailyRoundCreator) resolvePayerSkippingAbsent(rotation *domain.Rotation, date string) string {
+	absentIDs, err := j.absenceRepo.GetAbsentUserIDsForDate(date)
+	if err != nil || len(absentIDs) == 0 {
+		return rotation.CurrentPayerID()
+	}
+	absentSet := make(map[string]struct{}, len(absentIDs))
+	for _, id := range absentIDs {
+		absentSet[id] = struct{}{}
+	}
+	members := rotation.Members
+	n := len(members)
+	for i := 0; i < n; i++ {
+		idx := (rotation.CurrentPos + i) % n
+		if _, absent := absentSet[members[idx].UserID]; !absent {
+			return members[idx].UserID
+		}
+	}
+	return rotation.CurrentPayerID()
 }
 
 // CreateForDate cria uma rodada para uma data específica (uso admin). payerID e notifyAt
@@ -68,7 +94,7 @@ func (j *DailyRoundCreator) CreateForDate(date, payerID, notifyAt string) error 
 		if err != nil || rotation == nil || len(rotation.Members) == 0 {
 			return domain.ErrRotationEmpty
 		}
-		payerID = rotation.CurrentPayerID()
+		payerID = j.resolvePayerSkippingAbsent(rotation, date)
 	}
 
 	// Se o frontend enviou um datetime-local ("YYYY-MM-DDTHH:MM"), usa diretamente;
@@ -137,14 +163,14 @@ func (j *DailyRoundCreator) Run() {
 		}
 	}
 
-	// Obtém pagador atual do rodízio
+	// Obtém pagador atual do rodízio, pulando ausentes
 	rotation, err := j.rotationRepo.Get()
 	if err != nil || rotation == nil || len(rotation.Members) == 0 {
 		slog.Warn("DailyRoundCreator: no rotation configured, skipping round creation")
 		return
 	}
 
-	payerID := rotation.CurrentPayerID()
+	payerID := j.resolvePayerSkippingAbsent(rotation, today)
 	now := time.Now()
 	closesAt := now.Add(time.Duration(windowMinutes) * time.Minute)
 	reminderAt := closesAt.Add(-5 * time.Minute)
