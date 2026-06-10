@@ -92,6 +92,13 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 	br, err := s.fcm.SendEachForMulticast(ctx, msg)
 	if err != nil {
 		slog.Error("FCMNotificationService: multicast error", "type", notifType, "err", err)
+		errMsg := err.Error()
+		for _, userID := range userIDs {
+			_ = s.notifRepo.Create(&domain.Notification{
+				UserID: userID, RoundID: roundID, Type: notifType,
+				Channel: domain.ChannelPush, Success: false, ErrorMessage: errMsg,
+			})
+		}
 		return
 	}
 
@@ -109,14 +116,20 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 		}
 	}
 
-	// Log one Notification entry per user (not per token) regardless of delivery outcome.
-	// The audit log records the attempt, not the delivery confirmation.
+	// Log one entry per user: success if at least one of their tokens was delivered.
+	overallSuccess := br.SuccessCount > 0
+	var overallErrMsg string
+	if br.FailureCount > 0 && br.SuccessCount == 0 {
+		overallErrMsg = "all tokens failed"
+	}
 	for _, userID := range userIDs {
 		if logErr := s.notifRepo.Create(&domain.Notification{
-			UserID:  userID,
-			RoundID: roundID,
-			Type:    notifType,
-			Channel: domain.ChannelPush,
+			UserID:       userID,
+			RoundID:      roundID,
+			Type:         notifType,
+			Channel:      domain.ChannelPush,
+			Success:      overallSuccess,
+			ErrorMessage: overallErrMsg,
 		}); logErr != nil {
 			slog.Error("FCMNotificationService: error logging notification", "type", notifType, "userID", userID, "err", logErr)
 		}

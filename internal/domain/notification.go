@@ -22,12 +22,14 @@ const (
 
 // Notification is an audit log entry for a sent notification.
 type Notification struct {
-	ID      string
-	UserID  string
-	RoundID string
-	Type    NotificationType
-	SentAt  time.Time
-	Channel NotificationChannel
+	ID           string
+	UserID       string
+	RoundID      string
+	Type         NotificationType
+	SentAt       time.Time
+	Channel      NotificationChannel
+	Success      bool
+	ErrorMessage string
 }
 
 // NotificationRepository persists notification log entries.
