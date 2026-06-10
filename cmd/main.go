@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	_ "time/tzdata" // embed IANA timezone DB so time.LoadLocation works on Railway
 
 	"github.com/robfig/cron/v3"
 	"github.com/antoniobt12062002/pao-de-queijo/internal/db"
