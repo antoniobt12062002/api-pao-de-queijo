@@ -139,7 +139,7 @@ func (uc *UserUseCase) signToken(user *domain.User) (string, error) {
 		"email": user.Email,
 		"role":  user.Role,
 		"iat":   time.Now().Unix(),
-		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+		"exp":   time.Now().Add(365 * 24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(uc.jwtSecret))
