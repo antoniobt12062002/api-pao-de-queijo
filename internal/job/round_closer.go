@@ -2,6 +2,7 @@ package job
 
 import (
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/antoniobt12062002/pao-de-queijo/internal/domain"
@@ -10,6 +11,9 @@ import (
 // ParticipationWindowCloser fecha a rodada do dia após o período de participação.
 type ParticipationWindowCloser struct {
 	roundRepo    domain.RoundRepository
+	partRepo     domain.ParticipationRepository
+	configRepo   domain.ConfigRepository
+	rotationRepo domain.RotationRepository
 	notifySvc    domain.NotificationService
 	scoreUpdater domain.ScoreUpdater
 	badgeChecker domain.BadgeChecker
@@ -17,19 +21,25 @@ type ParticipationWindowCloser struct {
 
 func NewParticipationWindowCloser(
 	roundRepo domain.RoundRepository,
+	partRepo domain.ParticipationRepository,
+	configRepo domain.ConfigRepository,
+	rotationRepo domain.RotationRepository,
 	notifySvc domain.NotificationService,
 	scoreUpdater domain.ScoreUpdater,
 	badgeChecker domain.BadgeChecker,
 ) *ParticipationWindowCloser {
 	return &ParticipationWindowCloser{
 		roundRepo:    roundRepo,
+		partRepo:     partRepo,
+		configRepo:   configRepo,
+		rotationRepo: rotationRepo,
 		notifySvc:    notifySvc,
 		scoreUpdater: scoreUpdater,
 		badgeChecker: badgeChecker,
 	}
 }
 
-// Run fecha a rodada de hoje se estiver aberta.
+// Run fecha a rodada de hoje se estiver aberta e o closes_at tiver passado.
 func (j *ParticipationWindowCloser) Run() {
 	today := time.Now().Format("2006-01-02")
 	round, err := j.roundRepo.GetByDate(today)
@@ -45,28 +55,25 @@ func (j *ParticipationWindowCloser) Run() {
 		slog.Info("ParticipationWindowCloser: round is not open, skipping", "status", round.Status)
 		return
 	}
+	j.closeRound(round)
+}
 
-	round.Status = domain.RoundStatusClosed
-	if err := j.roundRepo.Update(round); err != nil {
-		slog.Error("ParticipationWindowCloser: error closing round", "err", err)
+// CheckAndClose é chamado periodicamente para fechar rodadas abertas que já
+// ultrapassaram closes_at (cobre confirmações tardias pelo pagador).
+func (j *ParticipationWindowCloser) CheckAndClose() {
+	today := time.Now().Format("2006-01-02")
+	round, err := j.roundRepo.GetByDate(today)
+	if err != nil || round == nil {
 		return
 	}
-
-	slog.Info("ParticipationWindowCloser: round closed", "id", round.ID)
-
-	// Notifica o pagador (noop por enquanto)
-	if err := j.notifySvc.SendRoundClosed(round.PayerID, round.ID); err != nil {
-		slog.Error("ParticipationWindowCloser: error sending notification", "err", err)
+	if round.Status != domain.RoundStatusOpen {
+		return
 	}
-
-	// Atualiza score (noop por enquanto)
-	if err := j.scoreUpdater.UpdateAfterRound(round.ID); err != nil {
-		slog.Error("ParticipationWindowCloser: error updating score", "err", err)
+	if time.Now().Before(round.ClosesAt) {
+		return
 	}
-
-	if err := j.badgeChecker.CheckAfterRound(round.ID); err != nil {
-		slog.Error("ParticipationWindowCloser: error checking badges", "err", err)
-	}
+	slog.Info("ParticipationWindowCloser: closing overdue open round", "id", round.ID)
+	j.closeRound(round)
 }
 
 // CloseRoundByID fecha uma rodada específica pelo ID (uso admin).
@@ -81,17 +88,77 @@ func (j *ParticipationWindowCloser) CloseRoundByID(roundID string) error {
 	if round.Status != domain.RoundStatusOpen {
 		return domain.ErrRoundNotOpen
 	}
+	j.closeRound(round)
+	return nil
+}
+
+// closeRound contém a lógica comum de fechamento: calcula custo, salva, avança
+// rotação, notifica e atualiza score/badges.
+func (j *ParticipationWindowCloser) closeRound(round *domain.Round) {
+	j.setAutoCost(round)
 
 	round.Status = domain.RoundStatusClosed
 	if err := j.roundRepo.Update(round); err != nil {
-		return err
+		slog.Error("ParticipationWindowCloser: error closing round", "err", err)
+		return
+	}
+	slog.Info("ParticipationWindowCloser: round closed", "id", round.ID)
+
+	// Avança rotação para o próximo pagador
+	if err := j.rotationRepo.AdvancePosition(); err != nil {
+		slog.Error("ParticipationWindowCloser: error advancing rotation", "err", err)
+	} else {
+		slog.Info("ParticipationWindowCloser: rotation advanced after round close")
 	}
 
-	slog.Info("ParticipationWindowCloser: round force-closed by admin", "id", round.ID)
-	_ = j.notifySvc.SendRoundClosed(round.PayerID, round.ID)
-	_ = j.scoreUpdater.UpdateAfterRound(round.ID)
-	_ = j.badgeChecker.CheckAfterRound(round.ID)
-	return nil
+	if err := j.notifySvc.SendRoundClosed(round.PayerID, round.ID); err != nil {
+		slog.Error("ParticipationWindowCloser: error sending notification", "err", err)
+	}
+
+	if err := j.scoreUpdater.UpdateAfterRound(round.ID); err != nil {
+		slog.Error("ParticipationWindowCloser: error updating score", "err", err)
+	}
+
+	if err := j.badgeChecker.CheckAfterRound(round.ID); err != nil {
+		slog.Error("ParticipationWindowCloser: error checking badges", "err", err)
+	}
+}
+
+// setAutoCost calcula e define o custo da rodada a partir das participações e
+// do preço unitário configurado. Não sobrescreve se já definido manualmente.
+func (j *ParticipationWindowCloser) setAutoCost(round *domain.Round) {
+	if round.ActualCost != nil {
+		return // já definido manualmente
+	}
+
+	parts, err := j.partRepo.GetByRound(round.ID)
+	if err != nil || len(parts) == 0 {
+		return
+	}
+	totalQty := 0
+	for _, p := range parts {
+		totalQty += p.Quantity
+	}
+
+	configs, err := j.configRepo.GetAll()
+	if err != nil {
+		return
+	}
+	var pricePerUnit float64
+	for _, c := range configs {
+		if c.Key == "price_per_unit" {
+			if v, err2 := strconv.ParseFloat(c.Value, 64); err2 == nil {
+				pricePerUnit = v
+			}
+		}
+	}
+	if pricePerUnit <= 0 {
+		return
+	}
+
+	cost := float64(totalQty) * pricePerUnit
+	round.ActualCost = &cost
+	slog.Info("ParticipationWindowCloser: auto-cost calculated", "totalQty", totalQty, "pricePerUnit", pricePerUnit, "cost", cost)
 }
 
 // ReminderSender envia lembretes aos participantes antes do fechamento.

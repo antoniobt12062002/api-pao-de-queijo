@@ -117,7 +117,7 @@ func main() {
 	scoreUpdater  := score.NewScoreUpdater(roundRepo, participationRepo, configRepo, scoreRepo)
 	badgeChecker  := score.NewBadgeChecker(roundRepo, participationRepo, configRepo, scoreRepo, badgeRepo)
 
-	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, notifySvc, scoreUpdater)
+	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, configRepo, notifySvc, scoreUpdater)
 	roundHandler := handler.NewRoundHandler(roundUC)
 
 	deviceTokenUC      := usecase.NewDeviceTokenUseCase(deviceTokenRepo)
@@ -127,7 +127,7 @@ func main() {
 	scoreHandler := handler.NewScoreHandler(scoreUC)
 
 	// Background jobs
-	closer  := job.NewParticipationWindowCloser(roundRepo, notifySvc, scoreUpdater, badgeChecker)
+	closer  := job.NewParticipationWindowCloser(roundRepo, participationRepo, configRepo, rotationRepo, notifySvc, scoreUpdater, badgeChecker)
 	reminder := job.NewReminderSender(roundRepo, participationRepo, notifySvc)
 	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, absenceRepo, notifySvc, closer, reminder)
 
@@ -153,6 +153,11 @@ func main() {
 	c := cron.New(cron.WithSeconds(), cron.WithLocation(time.Local))
 	if _, err := c.AddFunc(cronExpr, creator.Run); err != nil {
 		slog.Error("failed to schedule DailyRoundCreator", "err", err)
+		os.Exit(1)
+	}
+	// Verifica a cada 5 minutos se há rodada aberta com closes_at ultrapassado
+	if _, err := c.AddFunc("0 */5 * * * *", closer.CheckAndClose); err != nil {
+		slog.Error("failed to schedule ParticipationWindowCloser periodic check", "err", err)
 		os.Exit(1)
 	}
 	c.Start()

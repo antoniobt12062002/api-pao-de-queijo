@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/antoniobt12062002/pao-de-queijo/internal/domain"
@@ -10,6 +11,7 @@ import (
 type RoundUseCase struct {
 	roundRepo    domain.RoundRepository
 	rotationRepo domain.RotationRepository
+	configRepo   domain.ConfigRepository
 	notifySvc    domain.NotificationService
 	scoreUpdater domain.ScoreUpdater
 }
@@ -17,12 +19,14 @@ type RoundUseCase struct {
 func NewRoundUseCase(
 	roundRepo domain.RoundRepository,
 	rotationRepo domain.RotationRepository,
+	configRepo domain.ConfigRepository,
 	notifySvc domain.NotificationService,
 	scoreUpdater domain.ScoreUpdater,
 ) *RoundUseCase {
 	return &RoundUseCase{
 		roundRepo:    roundRepo,
 		rotationRepo: rotationRepo,
+		configRepo:   configRepo,
 		notifySvc:    notifySvc,
 		scoreUpdater: scoreUpdater,
 	}
@@ -86,20 +90,47 @@ func (uc *RoundUseCase) Confirm(roundID, callerID string) error {
 	if round.Status != domain.RoundStatusPending {
 		return domain.ErrRoundNotPending
 	}
+
+	// Se o pagador confirmou após o closes_at, reabre a janela de participação
+	if time.Now().After(round.ClosesAt) {
+		windowMinutes := uc.getWindowMinutes()
+		round.ClosesAt = time.Now().Add(time.Duration(windowMinutes) * time.Minute)
+	}
+
 	round.Status = domain.RoundStatusOpen
 	if err := uc.roundRepo.Update(round); err != nil {
 		return err
 	}
-	// Notifica todos os membros da rotação que a rodada está aberta para participação
+
+	// Notifica todos os membros exceto o próprio pagador (ele já foi notificado no round_announced)
 	rotation, err := uc.rotationRepo.Get()
 	if err == nil && rotation != nil && len(rotation.Members) > 0 {
-		userIDs := make([]string, len(rotation.Members))
-		for i, m := range rotation.Members {
-			userIDs[i] = m.UserID
+		var userIDs []string
+		for _, m := range rotation.Members {
+			if m.UserID != callerID {
+				userIDs = append(userIDs, m.UserID)
+			}
 		}
-		_ = uc.notifySvc.SendParticipationOpen(userIDs, roundID)
+		if len(userIDs) > 0 {
+			_ = uc.notifySvc.SendParticipationOpen(userIDs, roundID)
+		}
 	}
 	return nil
+}
+
+func (uc *RoundUseCase) getWindowMinutes() int {
+	configs, err := uc.configRepo.GetAll()
+	if err != nil {
+		return 30
+	}
+	for _, c := range configs {
+		if c.Key == "round_window_minutes" {
+			if v, err2 := strconv.Atoi(c.Value); err2 == nil && v > 0 {
+				return v
+			}
+		}
+	}
+	return 30
 }
 
 func (uc *RoundUseCase) SetActualCost(roundID, callerID string, cost float64) error {

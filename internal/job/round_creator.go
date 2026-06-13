@@ -132,7 +132,12 @@ func (j *DailyRoundCreator) CreateForDate(date, payerID, notifyAt string) error 
 
 // Run executa o job de criação diária de rodada. É idempotente.
 func (j *DailyRoundCreator) Run() {
-	today := time.Now().Format("2006-01-02")
+	now := time.Now()
+	if wd := now.Weekday(); wd == time.Saturday || wd == time.Sunday {
+		slog.Info("DailyRoundCreator: skipping weekend", "weekday", wd)
+		return
+	}
+	today := now.Format("2006-01-02")
 
 	// Idempotência: verifica se já existe rodada para hoje
 	existing, err := j.roundRepo.GetByDate(today)
@@ -171,7 +176,6 @@ func (j *DailyRoundCreator) Run() {
 	}
 
 	payerID := j.resolvePayerSkippingAbsent(rotation, today)
-	now := time.Now()
 	closesAt := now.Add(time.Duration(windowMinutes) * time.Minute)
 	reminderAt := closesAt.Add(-5 * time.Minute)
 
