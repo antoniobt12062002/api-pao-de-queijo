@@ -82,9 +82,15 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 
 	msg := &messaging.MulticastMessage{
 		Tokens: tokens,
-		Data: map[string]string{
-			"title": title,
-			"body":  body,
+		Webpush: &messaging.WebpushConfig{
+			Notification: &messaging.WebpushNotification{
+				Title: title,
+				Body:  body,
+				Icon:  "/icon-192.png",
+			},
+			FCMOptions: &messaging.WebpushFCMOptions{
+				Link: "/",
+			},
 		},
 	}
 
