@@ -83,9 +83,9 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 
 	msg := &messaging.MulticastMessage{
 		Tokens: tokens,
-		Notification: &messaging.Notification{
-			Title: title,
-			Body:  body,
+		Data: map[string]string{
+			"title": title,
+			"body":  body,
 		},
 	}
 
