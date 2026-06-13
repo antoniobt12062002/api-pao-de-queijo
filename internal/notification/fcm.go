@@ -89,7 +89,7 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 				Icon:  "/icon-192.png",
 			},
 			FCMOptions: &messaging.WebpushFCMOptions{
-				Link: "/",
+				Link: "https://glowing-syrniki-17cec4.netlify.app/",
 			},
 		},
 	}
