@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"log/slog"
-	"strconv"
 	"time"
 
 	"github.com/antoniobt12062002/pao-de-queijo/internal/domain"
@@ -11,7 +10,6 @@ import (
 type RoundUseCase struct {
 	roundRepo    domain.RoundRepository
 	rotationRepo domain.RotationRepository
-	configRepo   domain.ConfigRepository
 	notifySvc    domain.NotificationService
 	scoreUpdater domain.ScoreUpdater
 }
@@ -19,14 +17,12 @@ type RoundUseCase struct {
 func NewRoundUseCase(
 	roundRepo domain.RoundRepository,
 	rotationRepo domain.RotationRepository,
-	configRepo domain.ConfigRepository,
 	notifySvc domain.NotificationService,
 	scoreUpdater domain.ScoreUpdater,
 ) *RoundUseCase {
 	return &RoundUseCase{
 		roundRepo:    roundRepo,
 		rotationRepo: rotationRepo,
-		configRepo:   configRepo,
 		notifySvc:    notifySvc,
 		scoreUpdater: scoreUpdater,
 	}
@@ -91,10 +87,9 @@ func (uc *RoundUseCase) Confirm(roundID, callerID string) error {
 		return domain.ErrRoundNotPending
 	}
 
-	// Se o pagador confirmou após o closes_at, reabre a janela de participação
+	// Janela de confirmação encerrada — pagador não pode mais confirmar
 	if time.Now().After(round.ClosesAt) {
-		windowMinutes := uc.getWindowMinutes()
-		round.ClosesAt = time.Now().Add(time.Duration(windowMinutes) * time.Minute)
+		return domain.ErrRoundExpired
 	}
 
 	round.Status = domain.RoundStatusOpen
@@ -118,20 +113,6 @@ func (uc *RoundUseCase) Confirm(roundID, callerID string) error {
 	return nil
 }
 
-func (uc *RoundUseCase) getWindowMinutes() int {
-	configs, err := uc.configRepo.GetAll()
-	if err != nil {
-		return 30
-	}
-	for _, c := range configs {
-		if c.Key == "round_window_minutes" {
-			if v, err2 := strconv.Atoi(c.Value); err2 == nil && v > 0 {
-				return v
-			}
-		}
-	}
-	return 30
-}
 
 func (uc *RoundUseCase) SetActualCost(roundID, callerID string, cost float64) error {
 	round, err := uc.roundRepo.GetByID(roundID)

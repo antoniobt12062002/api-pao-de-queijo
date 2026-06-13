@@ -94,7 +94,7 @@ func (m *mockScoreUpdater) UpdateOnCancel(roundID string) error   { return nil }
 // --- tests ---
 
 func TestRoundUseCase_GetAll_Empty(t *testing.T) {
-	uc := usecase.NewRoundUseCase(newMockRoundRepo(), newMockRotationRepoForRound(), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(newMockRoundRepo(), newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
 	resp, err := uc.GetAll(1, 20)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -108,7 +108,7 @@ func TestRoundUseCase_GetAll_Empty(t *testing.T) {
 }
 
 func TestRoundUseCase_GetToday_NoRound(t *testing.T) {
-	uc := usecase.NewRoundUseCase(newMockRoundRepo(), newMockRotationRepoForRound(), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(newMockRoundRepo(), newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
 	resp, err := uc.GetToday("user-1", "")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -130,7 +130,7 @@ func TestRoundUseCase_GetToday_IsPayer(t *testing.T) {
 	repo.rounds["round-1"] = round
 	repo.byDate[today] = round
 
-	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
 	resp, err := uc.GetToday("user-1", "")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -155,7 +155,7 @@ func TestRoundUseCase_GetToday_IsNotPayer(t *testing.T) {
 	repo.rounds["round-1"] = round
 	repo.byDate[today] = round
 
-	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
 	resp, err := uc.GetToday("user-2", "")
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -170,10 +170,10 @@ func TestRoundUseCase_GetToday_IsNotPayer(t *testing.T) {
 
 func TestRoundUseCase_Confirm_Valid(t *testing.T) {
 	repo := newMockRoundRepo()
-	round := &domain.Round{ID: "round-1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusPending}
+	round := &domain.Round{ID: "round-1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusPending, ClosesAt: time.Now().Add(time.Hour)}
 	repo.rounds["round-1"] = round
 
-	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
 	if err := uc.Confirm("round-1", "user-1"); err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -187,7 +187,7 @@ func TestRoundUseCase_Confirm_NotPending(t *testing.T) {
 	round := &domain.Round{ID: "round-1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusOpen}
 	repo.rounds["round-1"] = round
 
-	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
 	err := uc.Confirm("round-1", "user-1")
 	if err == nil {
 		t.Fatal("expected error for non-pending round, got nil")
@@ -202,7 +202,7 @@ func TestRoundUseCase_Confirm_NotPayer(t *testing.T) {
 	round := &domain.Round{ID: "round-1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusPending}
 	repo.rounds["round-1"] = round
 
-	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
 	err := uc.Confirm("round-1", "user-2")
 	if err == nil {
 		t.Fatal("expected error for non-payer, got nil")
@@ -224,7 +224,7 @@ func TestRoundUseCase_Cancel_Valid(t *testing.T) {
 	}
 	rotRepo := newMockRotationRepoForRound(members...)
 
-	uc := usecase.NewRoundUseCase(repo, rotRepo, &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, rotRepo, &mockNotifySvc{}, &mockScoreUpdater{})
 	if err := uc.Cancel("round-1", "user-1"); err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -242,7 +242,7 @@ func TestRoundUseCase_Cancel_NotPending(t *testing.T) {
 	round := &domain.Round{ID: "round-1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusOpen}
 	repo.rounds["round-1"] = round
 
-	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
 	err := uc.Cancel("round-1", "user-1")
 	if err == nil {
 		t.Fatal("expected error for non-pending round, got nil")
@@ -257,7 +257,7 @@ func TestRoundUseCase_Cancel_NotPayer(t *testing.T) {
 	round := &domain.Round{ID: "round-1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusPending}
 	repo.rounds["round-1"] = round
 
-	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newMockRotationRepoForRound(), &mockNotifySvc{}, &mockScoreUpdater{})
 	err := uc.Cancel("round-1", "user-2")
 	if err == nil {
 		t.Fatal("expected error for non-payer, got nil")

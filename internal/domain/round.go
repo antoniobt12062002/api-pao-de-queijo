@@ -11,6 +11,7 @@ var (
 	ErrRoundNotPayer      = errors.New("only the current payer can perform this action")
 	ErrRotationEmpty      = errors.New("rotation has no members configured")
 	ErrRoundAlreadyExists = errors.New("round already exists for this date")
+	ErrRoundExpired       = errors.New("confirmation window has closed for this round")
 )
 
 type RoundStatus string

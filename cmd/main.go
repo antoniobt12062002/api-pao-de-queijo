@@ -117,7 +117,7 @@ func main() {
 	scoreUpdater  := score.NewScoreUpdater(roundRepo, participationRepo, configRepo, scoreRepo)
 	badgeChecker  := score.NewBadgeChecker(roundRepo, participationRepo, configRepo, scoreRepo, badgeRepo)
 
-	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, configRepo, notifySvc, scoreUpdater)
+	roundUC      := usecase.NewRoundUseCase(roundRepo, rotationRepo, notifySvc, scoreUpdater)
 	roundHandler := handler.NewRoundHandler(roundUC)
 
 	deviceTokenUC      := usecase.NewDeviceTokenUseCase(deviceTokenRepo)

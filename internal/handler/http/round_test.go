@@ -94,7 +94,7 @@ func withUserID(r *http.Request, userID string) *http.Request {
 // --- tests ---
 
 func TestRoundHandler_GetAll_Empty(t *testing.T) {
-	uc := usecase.NewRoundUseCase(newStubRoundRepo(), newStubRotationRepoForRound(), &stubConfigRepo{}, &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
+	uc := usecase.NewRoundUseCase(newStubRoundRepo(), newStubRotationRepoForRound(), &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
 	h := handler.NewRoundHandler(uc)
 
 	req := httptest.NewRequest(http.MethodGet, "/v1/rounds", nil)
@@ -113,7 +113,7 @@ func TestRoundHandler_GetAll_Empty(t *testing.T) {
 }
 
 func TestRoundHandler_GetToday_NoRound(t *testing.T) {
-	uc := usecase.NewRoundUseCase(newStubRoundRepo(), newStubRotationRepoForRound(), &stubConfigRepo{}, &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
+	uc := usecase.NewRoundUseCase(newStubRoundRepo(), newStubRotationRepoForRound(), &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
 	h := handler.NewRoundHandler(uc)
 
 	req := httptest.NewRequest(http.MethodGet, "/v1/rounds/today", nil)
@@ -133,7 +133,7 @@ func TestRoundHandler_GetToday_WithRound(t *testing.T) {
 	repo.rounds["r1"] = round
 	repo.byDate[today] = round
 
-	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubConfigRepo{}, &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
 	h := handler.NewRoundHandler(uc)
 
 	req := httptest.NewRequest(http.MethodGet, "/v1/rounds/today", nil)
@@ -153,10 +153,10 @@ func TestRoundHandler_GetToday_WithRound(t *testing.T) {
 
 func TestRoundHandler_Confirm_Valid(t *testing.T) {
 	repo := newStubRoundRepo()
-	round := &domain.Round{ID: "r1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusPending}
+	round := &domain.Round{ID: "r1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusPending, ClosesAt: time.Now().Add(time.Hour)}
 	repo.rounds["r1"] = round
 
-	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubConfigRepo{}, &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
 	h := handler.NewRoundHandler(uc)
 
 	r := chi.NewRouter()
@@ -177,7 +177,7 @@ func TestRoundHandler_Confirm_NotPending(t *testing.T) {
 	round := &domain.Round{ID: "r1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusOpen}
 	repo.rounds["r1"] = round
 
-	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubConfigRepo{}, &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
 	h := handler.NewRoundHandler(uc)
 
 	r := chi.NewRouter()
@@ -198,7 +198,7 @@ func TestRoundHandler_Confirm_NotPayer(t *testing.T) {
 	round := &domain.Round{ID: "r1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusPending}
 	repo.rounds["r1"] = round
 
-	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubConfigRepo{}, &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
 	h := handler.NewRoundHandler(uc)
 
 	r := chi.NewRouter()
@@ -224,7 +224,7 @@ func TestRoundHandler_Cancel_Valid(t *testing.T) {
 		{UserID: "user-1", Position: 0},
 		{UserID: "user-2", Position: 1},
 	}
-	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(members...), &stubConfigRepo{}, &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(members...), &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
 	h := handler.NewRoundHandler(uc)
 
 	r := chi.NewRouter()
@@ -245,7 +245,7 @@ func TestRoundHandler_Cancel_NotPayer(t *testing.T) {
 	round := &domain.Round{ID: "r1", Date: "2026-01-01", PayerID: "user-1", Status: domain.RoundStatusPending}
 	repo.rounds["r1"] = round
 
-	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubConfigRepo{}, &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
+	uc := usecase.NewRoundUseCase(repo, newStubRotationRepoForRound(), &stubNotifySvcForRound{}, &domain.NoopScoreUpdater{})
 	h := handler.NewRoundHandler(uc)
 
 	r := chi.NewRouter()

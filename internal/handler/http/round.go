@@ -93,6 +93,8 @@ func (h *RoundHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusForbidden, err.Error())
 		case errors.Is(err, domain.ErrRoundNotPending):
 			writeError(w, http.StatusConflict, err.Error())
+		case errors.Is(err, domain.ErrRoundExpired):
+			writeError(w, http.StatusGone, err.Error())
 		default:
 			writeError(w, http.StatusInternalServerError, "internal server error")
 		}
