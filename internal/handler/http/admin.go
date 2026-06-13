@@ -12,17 +12,21 @@ import (
 )
 
 type AdminHandler struct {
-	creator *job.DailyRoundCreator
-	closer  *job.ParticipationWindowCloser
-	roundUC *usecase.RoundUseCase
+	creator   *job.DailyRoundCreator
+	closer    *job.ParticipationWindowCloser
+	roundUC   *usecase.RoundUseCase
+	userRepo  domain.UserRepository
+	notifySvc domain.NotificationService
 }
 
 func NewAdminHandler(
 	creator *job.DailyRoundCreator,
 	closer *job.ParticipationWindowCloser,
 	roundUC *usecase.RoundUseCase,
+	userRepo domain.UserRepository,
+	notifySvc domain.NotificationService,
 ) *AdminHandler {
-	return &AdminHandler{creator: creator, closer: closer, roundUC: roundUC}
+	return &AdminHandler{creator: creator, closer: closer, roundUC: roundUC, userRepo: userRepo, notifySvc: notifySvc}
 }
 
 func (h *AdminHandler) TriggerRound(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +38,7 @@ func (h *AdminHandler) CreateRound(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Date     string `json:"date"`
 		PayerID  string `json:"payer_id"`
-		NotifyAt string `json:"notify_at"` // optional "YYYY-MM-DDTHH:MM"
+		NotifyAt string `json:"notify_at"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Date == "" {
 		writeError(w, http.StatusUnprocessableEntity, "date is required (YYYY-MM-DD)")
@@ -91,4 +95,40 @@ func (h *AdminHandler) ChangePayer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"message": "payer updated"})
+}
+
+func (h *AdminHandler) SendNotification(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		UserIDs []string `json:"user_ids"`
+		Title   string   `json:"title"`
+		Body    string   `json:"body"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "invalid request body")
+		return
+	}
+	if req.Title == "" || req.Body == "" {
+		writeError(w, http.StatusUnprocessableEntity, "title and body are required")
+		return
+	}
+
+	userIDs := req.UserIDs
+	if len(userIDs) == 0 {
+		users, err := h.userRepo.FindAll()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+		for _, u := range users {
+			if u.Active {
+				userIDs = append(userIDs, u.ID)
+			}
+		}
+	}
+
+	if err := h.notifySvc.SendManual(userIDs, req.Title, req.Body); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to send notification")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"message": "notification sent", "recipients": len(userIDs)})
 }

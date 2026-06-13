@@ -19,6 +19,7 @@ func (m *mockUserRepo) FindByID(id string) (*domain.User, error)                
 func (m *mockUserRepo) FindAll() ([]*domain.User, error)  { return nil, nil }
 func (m *mockUserRepo) UpdateRole(id, role string) error  { return nil }
 func (m *mockUserRepo) Deactivate(id string) error        { return nil }
+func (m *mockUserRepo) Activate(id string) error          { return nil }
 
 type mockParticipationRepo struct {
 	byRoundUser map[string]*domain.Participation // key: roundID+":"+userID

@@ -10,7 +10,7 @@ import (
 type notificationLogModel struct {
 	ID           string    `gorm:"column:id;primaryKey;type:uuid;default:gen_random_uuid()"`
 	UserID       string    `gorm:"column:user_id;type:uuid"`
-	RoundID      string    `gorm:"column:round_id;type:uuid"`
+	RoundID      *string   `gorm:"column:round_id;type:uuid"`
 	Type         string    `gorm:"column:type"`
 	SentAt       time.Time `gorm:"column:sent_at;autoCreateTime"`
 	Channel      string    `gorm:"column:channel"`

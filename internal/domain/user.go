@@ -39,4 +39,5 @@ type UserRepository interface {
 	FindAll() ([]*User, error)
 	UpdateRole(id, role string) error
 	Deactivate(id string) error
+	Activate(id string) error
 }

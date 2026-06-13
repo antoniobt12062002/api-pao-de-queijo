@@ -84,6 +84,7 @@ func (n *mockNotifySvc) SendRoundAnnounced(payerID, roundID string) error       
 func (n *mockNotifySvc) SendParticipationOpen(userIDs []string, roundID string) error { return nil }
 func (n *mockNotifySvc) SendRoundClosed(payerID, roundID string) error               { return nil }
 func (n *mockNotifySvc) SendReminder(participantIDs []string, roundID string) error  { return nil }
+func (n *mockNotifySvc) SendManual(userIDs []string, title, body string) error       { return nil }
 
 type mockScoreUpdater struct{}
 

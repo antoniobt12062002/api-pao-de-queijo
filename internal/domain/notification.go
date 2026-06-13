@@ -10,6 +10,7 @@ const (
 	NotifParticipationOpen NotificationType = "participation_open"
 	NotifRoundClosed       NotificationType = "round_closed"
 	NotifReminder          NotificationType = "reminder"
+	NotifManual            NotificationType = "manual"
 )
 
 // NotificationChannel is the delivery channel.
@@ -24,7 +25,7 @@ const (
 type Notification struct {
 	ID           string
 	UserID       string
-	RoundID      string
+	RoundID      *string // nullable — nil for manual notifications
 	Type         NotificationType
 	SentAt       time.Time
 	Channel      NotificationChannel
@@ -38,18 +39,19 @@ type NotificationRepository interface {
 }
 
 // NotificationService sends notifications to users.
-// roundID is required for audit logging.
 type NotificationService interface {
 	SendRoundAnnounced(payerID, roundID string) error
 	SendParticipationOpen(userIDs []string, roundID string) error
 	SendRoundClosed(payerID, roundID string) error
 	SendReminder(participantIDs []string, roundID string) error
+	SendManual(userIDs []string, title, body string) error
 }
 
-// NoopNotificationService is the stub used until feature/notification wires the real service.
+// NoopNotificationService is the stub used when Firebase is not configured.
 type NoopNotificationService struct{}
 
 func (n *NoopNotificationService) SendRoundAnnounced(payerID, roundID string) error             { return nil }
 func (n *NoopNotificationService) SendParticipationOpen(userIDs []string, roundID string) error { return nil }
 func (n *NoopNotificationService) SendRoundClosed(payerID, roundID string) error               { return nil }
 func (n *NoopNotificationService) SendReminder(participantIDs []string, roundID string) error  { return nil }
+func (n *NoopNotificationService) SendManual(userIDs []string, title, body string) error       { return nil }

@@ -80,7 +80,9 @@ func (app *application) mount() http.Handler {
 			r.With(handler.AdminOnly).Post("/admin/rounds", app.adminHandler.CreateRound)
 			r.With(handler.AdminOnly).Post("/admin/rounds/{id}/force-close", app.adminHandler.ForceCloseRound)
 			r.With(handler.AdminOnly).Put("/admin/rounds/{id}/payer", app.adminHandler.ChangePayer)
+			r.With(handler.AdminOnly).Post("/admin/notifications/send", app.adminHandler.SendNotification)
 			r.With(handler.AdminOnly).Put("/users/{id}/deactivate", app.userHandler.Deactivate)
+			r.With(handler.AdminOnly).Put("/users/{id}/activate", app.userHandler.Activate)
 		})
 	})
 

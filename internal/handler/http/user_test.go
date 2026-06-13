@@ -26,6 +26,7 @@ func (s *stubRepo) FindByID(id string) (*domain.User, error)            { return
 func (s *stubRepo) FindAll() ([]*domain.User, error)         { return nil, nil }
 func (s *stubRepo) UpdateRole(id, role string) error         { return nil }
 func (s *stubRepo) Deactivate(id string) error               { return nil }
+func (s *stubRepo) Activate(id string) error                 { return nil }
 
 func TestRegisterHandler(t *testing.T) {
 	uc := usecase.NewUserUseCase(newStubRepo(), "secret")

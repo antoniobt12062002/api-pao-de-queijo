@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(sed -i 's/usecase\\\\.NewRoundUseCase\\(\\\\\\(.*\\\\\\), \\\\\\(.*\\\\\\), &stubConfigRepo{}, &stubNotifySvcForRound{}, &domain\\\\.NoopScoreUpdater{}\\)/usecase.NewRoundUseCase\\(\\\\1, \\\\2, \\\\&stubNotifySvcForRound{}, \\\\&domain.NoopScoreUpdater{}\\)/g' internal/handler/http/round_test.go)",
+      "Bash(sed -i 's/usecase\\\\.NewRoundUseCase\\(\\\\\\(.*\\\\\\), \\\\\\(.*\\\\\\), &mockConfigRepo{}, &mockNotifySvc{}, &mockScoreUpdater{}\\)/usecase.NewRoundUseCase\\(\\\\1, \\\\2, \\\\&mockNotifySvc{}, \\\\&mockScoreUpdater{}\\)/g' internal/usecase/round_test.go)",
+      "Bash(sed -i 's/func \\(m \\\\*mockUserRepo\\) Deactivate\\(id string\\) error        { return nil }/func \\(m *mockUserRepo\\) Deactivate\\(id string\\) error        { return nil }\\\\nfunc \\(m *mockUserRepo\\) Activate\\(id string\\) error          { return nil }/' internal/usecase/participation_test.go)",
+      "Bash(sed -i 's/func \\(m \\\\*mockRepo\\) Deactivate\\(id string\\) error       { return nil }/func \\(m *mockRepo\\) Deactivate\\(id string\\) error       { return nil }\\\\nfunc \\(m *mockRepo\\) Activate\\(id string\\) error         { return nil }/' internal/usecase/user_test.go)",
+      "Bash(printf '\\\\nexport async function activateUser\\(id: string\\): Promise<void> {\\\\n  await apiClient.put\\(`/users/${id}/activate`\\)\\\\n}\\\\n')"
     ]
   }
 }

@@ -40,6 +40,10 @@ func (uc *UserUseCase) DeactivateUser(id string) error {
 	return uc.repo.Deactivate(id)
 }
 
+func (uc *UserUseCase) ActivateUser(id string) error {
+	return uc.repo.Activate(id)
+}
+
 func (uc *UserUseCase) CreateUser(input domain.CreateUserInput) (*domain.User, error) {
 	existing, err := uc.repo.FindByEmail(input.Email)
 	if err != nil {

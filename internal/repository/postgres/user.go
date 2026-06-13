@@ -88,6 +88,10 @@ func (r *UserRepository) Deactivate(id string) error {
 	return r.db.Model(&userModel{}).Where("id = ?", id).Update("active", false).Error
 }
 
+func (r *UserRepository) Activate(id string) error {
+	return r.db.Model(&userModel{}).Where("id = ?", id).Update("active", true).Error
+}
+
 func (r *UserRepository) FindAll() ([]*domain.User, error) {
 	var models []userModel
 	if err := r.db.Find(&models).Error; err != nil {

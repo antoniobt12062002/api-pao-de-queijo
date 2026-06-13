@@ -84,6 +84,7 @@ func (s *stubNotifySvcForRound) SendRoundAnnounced(payerID, roundID string) erro
 func (s *stubNotifySvcForRound) SendParticipationOpen(userIDs []string, roundID string) error { return nil }
 func (s *stubNotifySvcForRound) SendRoundClosed(payerID, roundID string) error               { return nil }
 func (s *stubNotifySvcForRound) SendReminder(participantIDs []string, roundID string) error  { return nil }
+func (s *stubNotifySvcForRound) SendManual(userIDs []string, title, body string) error       { return nil }
 
 // withUserID injects user_id into context to simulate JWTMiddleware
 func withUserID(r *http.Request, userID string) *http.Request {

@@ -131,7 +131,7 @@ func main() {
 	reminder := job.NewReminderSender(roundRepo, participationRepo, notifySvc)
 	creator  := job.NewDailyRoundCreator(roundRepo, rotationRepo, configRepo, absenceRepo, notifySvc, closer, reminder)
 
-	adminHandler := handler.NewAdminHandler(creator, closer, roundUC)
+	adminHandler := handler.NewAdminHandler(creator, closer, roundUC, userRepo, notifySvc)
 
 	// Scheduler: lê notify_at da config para montar expressão cron
 	notifyAt := "08:00"

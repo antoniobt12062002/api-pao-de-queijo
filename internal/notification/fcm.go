@@ -12,20 +12,17 @@ import (
 )
 
 // FCMSender is the subset of messaging.Client used by FCMNotificationService.
-// Defined as an interface so tests can inject a mock.
 type FCMSender interface {
 	SendEachForMulticast(ctx context.Context, message *messaging.MulticastMessage) (*messaging.BatchResponse, error)
 }
 
 // FCMNotificationService implements domain.NotificationService using Firebase FCM.
-// All methods are fire-and-forget: errors are logged but never returned to callers.
 type FCMNotificationService struct {
 	fcm        FCMSender
 	deviceRepo domain.DeviceTokenRepository
 	notifRepo  domain.NotificationRepository
 }
 
-// NewFCMNotificationService creates a production instance using Firebase credentials JSON.
 func NewFCMNotificationService(credentialsJSON []byte, deviceRepo domain.DeviceTokenRepository, notifRepo domain.NotificationRepository) (*FCMNotificationService, error) {
 	app, err := firebase.NewApp(context.Background(), nil, option.WithCredentialsJSON(credentialsJSON))
 	if err != nil {
@@ -35,41 +32,43 @@ func NewFCMNotificationService(credentialsJSON []byte, deviceRepo domain.DeviceT
 	if err != nil {
 		return nil, err
 	}
-	return &FCMNotificationService{
-		fcm:        client,
-		deviceRepo: deviceRepo,
-		notifRepo:  notifRepo,
-	}, nil
+	return &FCMNotificationService{fcm: client, deviceRepo: deviceRepo, notifRepo: notifRepo}, nil
 }
 
-// NewFCMNotificationServiceWithSender creates a testable instance with an injected sender.
 func NewFCMNotificationServiceWithSender(fcm FCMSender, deviceRepo domain.DeviceTokenRepository, notifRepo domain.NotificationRepository) *FCMNotificationService {
 	return &FCMNotificationService{fcm: fcm, deviceRepo: deviceRepo, notifRepo: notifRepo}
 }
 
 func (s *FCMNotificationService) SendRoundAnnounced(payerID, roundID string) error {
-	s.sendToUsers(context.Background(), []string{payerID}, roundID, domain.NotifRoundAnnounced, "Pão de Queijo hoje!", "Você é o pagador de hoje. Confirme a rodada.")
+	rid := roundID
+	s.sendToUsers(context.Background(), []string{payerID}, &rid, domain.NotifRoundAnnounced, "Pão de Queijo hoje!", "Você é o pagador de hoje. Confirme a rodada.")
 	return nil
 }
 
 func (s *FCMNotificationService) SendParticipationOpen(userIDs []string, roundID string) error {
-	s.sendToUsers(context.Background(), userIDs, roundID, domain.NotifParticipationOpen, "Pão de Queijo aberto!", "A rodada está aberta. Registre sua participação.")
+	rid := roundID
+	s.sendToUsers(context.Background(), userIDs, &rid, domain.NotifParticipationOpen, "Pão de Queijo aberto!", "A rodada está aberta. Registre sua participação.")
 	return nil
 }
 
 func (s *FCMNotificationService) SendRoundClosed(payerID, roundID string) error {
-	s.sendToUsers(context.Background(), []string{payerID}, roundID, domain.NotifRoundClosed, "Rodada encerrada", "A janela de participação foi fechada.")
+	rid := roundID
+	s.sendToUsers(context.Background(), []string{payerID}, &rid, domain.NotifRoundClosed, "Rodada encerrada", "A janela de participação foi fechada.")
 	return nil
 }
 
 func (s *FCMNotificationService) SendReminder(participantIDs []string, roundID string) error {
-	s.sendToUsers(context.Background(), participantIDs, roundID, domain.NotifReminder, "Lembrete: Pão de Queijo", "A rodada fecha em breve!")
+	rid := roundID
+	s.sendToUsers(context.Background(), participantIDs, &rid, domain.NotifReminder, "Lembrete: Pão de Queijo", "A rodada fecha em breve!")
 	return nil
 }
 
-// sendToUsers fetches FCM tokens for all userIDs, sends a multicast message,
-// cleans up invalid tokens, and logs one Notification entry per user.
-func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []string, roundID string, notifType domain.NotificationType, title, body string) {
+func (s *FCMNotificationService) SendManual(userIDs []string, title, body string) error {
+	s.sendToUsers(context.Background(), userIDs, nil, domain.NotifManual, title, body)
+	return nil
+}
+
+func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []string, roundID *string, notifType domain.NotificationType, title, body string) {
 	tokens, err := s.deviceRepo.GetTokensByUserIDs(userIDs)
 	if err != nil {
 		slog.Error("FCMNotificationService: error fetching tokens", "type", notifType, "err", err)
@@ -116,7 +115,6 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 		}
 	}
 
-	// Log one entry per user: success if at least one of their tokens was delivered.
 	overallSuccess := br.SuccessCount > 0
 	var overallErrMsg string
 	if br.FailureCount > 0 && br.SuccessCount == 0 {
@@ -136,5 +134,4 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 	}
 }
 
-// Verify interface compliance at compile time.
 var _ domain.NotificationService = (*FCMNotificationService)(nil)
