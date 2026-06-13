@@ -14,7 +14,7 @@ type notificationLogModel struct {
 	Type         string    `gorm:"column:type"`
 	SentAt       time.Time `gorm:"column:sent_at;autoCreateTime"`
 	Channel      string    `gorm:"column:channel"`
-	Success      bool      `gorm:"column:success;default:true"`
+	Success      bool      `gorm:"column:success;default:false"`
 	ErrorMessage string    `gorm:"column:error_message"`
 }
 

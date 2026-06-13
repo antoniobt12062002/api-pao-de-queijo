@@ -78,7 +78,7 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 		slog.Warn("FCMNotificationService: no tokens found for users", "type", notifType, "userIDs", userIDs)
 		return
 	}
-	slog.Info("FCMNotificationService: sending notification", "type", notifType, "tokenCount", len(tokens))
+	slog.Info("FCMNotificationService: sending notification", "type", notifType, "userCount", len(userIDs), "tokenCount", len(tokens))
 
 	msg := &messaging.MulticastMessage{
 		Tokens: tokens,
@@ -86,7 +86,7 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 			Notification: &messaging.WebpushNotification{
 				Title: title,
 				Body:  body,
-				Icon:  "/icon-192.png",
+				Icon:  "https://glowing-syrniki-17cec4.netlify.app/icon-192.png",
 			},
 			FCMOptions: &messaging.WebpushFCMOptions{
 				Link: "https://glowing-syrniki-17cec4.netlify.app/",
@@ -107,25 +107,49 @@ func (s *FCMNotificationService) sendToUsers(ctx context.Context, userIDs []stri
 		return
 	}
 
-	slog.Info("FCMNotificationService: multicast sent", "type", notifType, "successCount", br.SuccessCount, "failureCount", br.FailureCount)
+	slog.Info("FCMNotificationService: multicast result",
+		"type", notifType,
+		"successCount", br.SuccessCount,
+		"failureCount", br.FailureCount,
+		"totalTokens", len(tokens),
+	)
 
+	var firstErrMsg string
 	for i, resp := range br.Responses {
-		if !resp.Success {
+		preview := tokens[i]
+		if len(preview) > 20 {
+			preview = preview[:20] + "..."
+		}
+		if resp.Success {
+			slog.Info("FCMNotificationService: token OK", "type", notifType, "tokenIndex", i, "token", preview)
+		} else {
+			errStr := ""
+			if resp.Error != nil {
+				errStr = resp.Error.Error()
+			}
+			slog.Error("FCMNotificationService: token FAILED",
+				"type", notifType,
+				"tokenIndex", i,
+				"token", preview,
+				"err", errStr,
+			)
+			if firstErrMsg == "" {
+				firstErrMsg = errStr
+			}
 			if messaging.IsUnregistered(resp.Error) || messaging.IsInvalidArgument(resp.Error) {
 				if deleteErr := s.deviceRepo.DeleteByToken(tokens[i]); deleteErr != nil {
-					slog.Error("FCMNotificationService: error deleting invalid token", "token", tokens[i], "err", deleteErr)
+					slog.Error("FCMNotificationService: error deleting invalid token", "token", preview, "err", deleteErr)
 				}
-			} else {
-				slog.Error("FCMNotificationService: failed to send to token", "token", tokens[i], "err", resp.Error)
 			}
 		}
 	}
 
 	overallSuccess := br.SuccessCount > 0
-	var overallErrMsg string
-	if br.FailureCount > 0 && br.SuccessCount == 0 {
-		overallErrMsg = "all tokens failed"
+	overallErrMsg := firstErrMsg
+	if !overallSuccess && overallErrMsg == "" {
+		overallErrMsg = "all tokens failed (no error detail)"
 	}
+
 	for _, userID := range userIDs {
 		if logErr := s.notifRepo.Create(&domain.Notification{
 			UserID:       userID,
